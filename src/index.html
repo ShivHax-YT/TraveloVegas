@@ -1,51 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Things to Do in Las Vegas, Checked Weekly | TraveloVegas</title>
-  <meta name="description" content="Shows, free things on the Strip, pool parties, food, nightlife and getting around in Las Vegas. Checked by locals and updated every week.">
-  <link rel="canonical" href="https://travelovegas.com/">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="TraveloVegas">
-  <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="The Strip, without the guesswork">
-  <meta property="og:description" content="Shows, free spectacles, food and nights out in Las Vegas, checked by locals and updated every week.">
-  <meta property="og:url" content="https://travelovegas.com/">
-  {{ogImage}}
-  <meta name="theme-color" content="#0e0b14">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300&family=Inter+Tight:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="css/site.css">
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
-  <script src="js/site.js" defer></script>
-  {{structuredData}}
+  {{head}}
 </head>
 <body>
-  <a class="skip" href="#main">Skip to content</a>
-
-  <header class="site-header" data-header>
-    <div class="header-bar">
-      <a class="wordmark" href="./">Travelo<em>Vegas</em></a>
-      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-menu">
-        <span class="menu-icon" aria-hidden="true"></span>
-        <span>Menu</span>
-      </button>
-      <div class="nav-panel" id="site-menu">
-        <nav class="nav" aria-label="Main">
-          <ul role="list">
-            <li><a href="shows/">Shows</a></li>
-            <li><a href="free/">Free</a></li>
-            <li><a href="eat/">Eat</a></li>
-            <li><a href="nightlife/">Nightlife</a></li>
-            <li><a href="tours/">Tours</a></li>
-          </ul>
-        </nav>
-        <a class="btn btn-neon" href="#plan">Plan my night</a>
-      </div>
-    </div>
-  </header>
+  {{header}}
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-title">
@@ -93,6 +52,7 @@
             </button>
           </div>
         </div>
+        {{weekDisclosure}}
         <ul class="rail" id="week-rail" role="list" tabindex="0" aria-labelledby="week-title">
       {{onThisWeek}}
         </ul>
@@ -131,9 +91,9 @@
           <div class="chip-group" role="group" aria-labelledby="pick-budget">
             <p class="eyebrow" id="pick-budget">Budget</p>
             <div class="chips" data-group="budget">
-              <button class="chip" type="button" aria-pressed="false" value="1" aria-label="Budget: low">$</button>
-              <button class="chip" type="button" aria-pressed="false" value="2" aria-label="Budget: mid">$$</button>
-              <button class="chip" type="button" aria-pressed="false" value="3" aria-label="Budget: high">$$$</button>
+              <button class="chip" type="button" aria-pressed="true" value="">Any</button>
+              <button class="chip" type="button" aria-pressed="false" value="cheap">Free or cheap</button>
+              <button class="chip" type="button" aria-pressed="false" value="splurge">Worth a splurge</button>
             </div>
           </div>
           <div class="chip-group" role="group" aria-labelledby="pick-who">
@@ -190,45 +150,6 @@
     </section>
   </main>
 
-  <nav class="bottom-bar" aria-label="Quick links">
-    <a class="btn btn-neon" href="#plan">Plan my night</a>
-    <a class="btn btn-ghost" href="free/">Free today</a>
-  </nav>
-
-  <footer class="site-footer is-dark">
-    <div class="wrap footer-grid">
-      <p class="footer-mark">Travelo<em>Vegas</em></p>
-      <div class="footer-links">
-        <nav aria-labelledby="f-explore">
-          <p class="eyebrow" id="f-explore">Explore</p>
-          <ul role="list">
-            <li><a href="shows/">Shows</a></li>
-            <li><a href="free/">Free</a></li>
-            <li><a href="eat/">Eat</a></li>
-            <li><a href="nightlife/">Nightlife</a></li>
-            <li><a href="pools/">Pools</a></li>
-            <li><a href="tours/">Tours</a></li>
-            <li><a href="getting-around/">Getting around</a></li>
-            <li><a href="21-plus/">21+</a></li>
-          </ul>
-        </nav>
-        <nav aria-labelledby="f-plan">
-          <p class="eyebrow" id="f-plan">Plan</p>
-          <ul role="list">
-            <li><a href="#plan">Plan my night</a></li>
-            <li><a href="#story">One perfect night</a></li>
-            <li><a href="#map">Strip map</a></li>
-            <li><a href="#faq">FAQ</a></li>
-          </ul>
-        </nav>
-      </div>
-      <div class="footer-legal">
-        <p id="disclosure"><strong>Affiliate disclosure.</strong> When you book shows, tours or tickets through some links on this site (like VEGAS.com, Viator and GetYourGuide), we may earn a commission at no extra cost to you.</p>
-        <p><strong>21+.</strong> Our 21+ section is for adults 21 and over. It's informational only, with no booking links.</p>
-        <p>Prices and schedules change. Always confirm with the venue.</p>
-        <p>&copy; {{year}} TraveloVegas</p>
-      </div>
-    </div>
-  </footer>
+  {{footer}}
 </body>
 </html>

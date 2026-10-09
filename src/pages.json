@@ -1,0 +1,61 @@
+{
+  "_about": "Category page copy. {n} = confirmed listings on the page. answer is the one-sentence direct answer under the H1. band = assets/media/band-<band>.jpg. categories = listings.json categories (free and tours also use rules in scripts/build.mjs). No em dashes.",
+  "pages": [
+    {
+      "slug": "shows", "band": "shows", "crumb": "Shows", "categories": ["shows"],
+      "h1": "Las Vegas shows",
+      "title": "Las Vegas Shows Playing Now, Checked Weekly | TraveloVegas",
+      "description": "{n} Las Vegas shows we've confirmed are running, from Cirque du Soleil to Sphere, each with the date we last checked.",
+      "answer": "These are the {n} Las Vegas shows we've confirmed are running right now, each marked with the date we last checked."
+    },
+    {
+      "slug": "free", "band": "free", "crumb": "Free", "categories": [],
+      "h1": "Free things to do in Las Vegas",
+      "title": "Free Things to Do in Las Vegas | TraveloVegas",
+      "description": "{n} free things to do in Las Vegas, from the Fountains of Bellagio to Fremont Street and the free Strip trams, each confirmed free by a source.",
+      "answer": "These {n} spots cost nothing to see or ride, and every one is confirmed free by a source we checked."
+    },
+    {
+      "slug": "eat", "band": "food", "crumb": "Eat", "categories": ["restaurants"],
+      "h1": "Where to eat in Las Vegas",
+      "title": "Where to Eat in Las Vegas: Indian, Vegetarian and More | TraveloVegas",
+      "description": "{n} Las Vegas restaurants we've confirmed, on and off the Strip. Filter by cuisine, starting with Indian and vegetarian.",
+      "answer": "We've confirmed {n} restaurants on and off the Strip, and you can filter them by cuisine, starting with Indian and vegetarian."
+    },
+    {
+      "slug": "nightlife", "band": "nightlife", "crumb": "Nightlife", "categories": ["nightclubs"],
+      "h1": "Las Vegas nightclubs",
+      "title": "Las Vegas Nightclubs, Checked Weekly | TraveloVegas",
+      "description": "{n} Las Vegas nightclubs we've confirmed, plus any that are closed for now and when they reopen.",
+      "answer": "These are the {n} Las Vegas nightclubs we've confirmed, plus any that are closed for now and when they reopen."
+    },
+    {
+      "slug": "pools", "band": "pools", "crumb": "Pools", "categories": ["pool-party"],
+      "h1": "Las Vegas pool parties",
+      "title": "Las Vegas Pool Parties and Dayclubs | TraveloVegas",
+      "description": "{n} Las Vegas dayclubs and pool parties we're tracking this season. Most wrap up in mid to late October.",
+      "answer": "We're tracking {n} dayclubs and pool parties this season, and most of them wrap up in mid to late October."
+    },
+    {
+      "slug": "tours", "band": "tours", "crumb": "Tours", "categories": ["tours", "attractions"],
+      "h1": "Las Vegas tours and attractions",
+      "title": "Las Vegas Tours and Attractions | TraveloVegas",
+      "description": "{n} Las Vegas tours and attractions we've confirmed, from Grand Canyon trips to rides on the Strip.",
+      "answer": "These are the {n} tours and attractions we've confirmed, from Grand Canyon day trips to rides high above the Strip."
+    },
+    {
+      "slug": "getting-around", "band": "getting-around", "crumb": "Getting around", "categories": ["transportation"],
+      "h1": "Getting around Las Vegas",
+      "title": "Getting Around Las Vegas: Monorail, Deuce, Trams | TraveloVegas",
+      "description": "The Las Vegas Monorail, the Deuce bus, the free Strip trams and airport pickups, with fares from official sources.",
+      "answer": "The Monorail, the Deuce bus, the free trams and the airport pickups are the {n} ways around town we've confirmed, with fares from official sources."
+    },
+    {
+      "slug": "21-plus", "band": "21plus", "crumb": "21+", "categories": ["strip-clubs", "adult-shows", "dispensaries"],
+      "h1": "21+ in Las Vegas",
+      "title": "21+ Las Vegas Guide: Clubs, Adult Shows, Cannabis | TraveloVegas",
+      "description": "An informational guide for adults 21 and over: strip clubs, adult shows and the Nevada cannabis rules. No booking links.",
+      "answer": "This is an informational guide for adults 21 and over, with no booking links: strip clubs, adult shows and how cannabis works in Nevada."
+    }
+  ]
+}

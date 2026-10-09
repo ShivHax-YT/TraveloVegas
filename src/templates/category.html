@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {{head}}
+</head>
+<body>
+  {{gate}}
+  {{header}}
+
+  <main id="main">
+    <section class="cat-hero" aria-labelledby="cat-title">
+      {{bandMedia}}
+      <div class="cat-hero-copy wrap">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <ol role="list">
+            <li><a href="{{home}}">Home</a></li>
+            <li aria-current="page">{{crumb}}</li>
+          </ol>
+        </nav>
+        <h1 class="cat-title" id="cat-title">{{h1}}</h1>
+        <p class="cat-answer">{{answer}}</p>
+      </div>
+    </section>
+
+    <section class="cat-list" aria-labelledby="cat-title">
+      <div class="wrap">
+        {{extra}}
+        {{chips}}
+        <p class="cat-count" role="status" aria-live="polite">{{count}}</p>
+        {{disclosure}}
+        <ul class="cat-grid" role="list">
+      {{cards}}
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  {{footer}}
+</body>
+</html>
