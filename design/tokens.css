@@ -1,0 +1,52 @@
+/* TraveloVegas design tokens. Single source of truth. Do not add values elsewhere. */
+:root {
+  /* Color: desert night + neon, used sparingly */
+  --night: #0e0b14;        /* dark immersive sections, hero base */
+  --night-2: #1a1424;      /* raised dark surfaces */
+  --dusk: #2a1b3d;         /* deep violet accent surface */
+  --paper: #f7f2ea;        /* main light background (warm, never pure white) */
+  --sand: #ece3d3;         /* alternate light band */
+  --ink: #17131c;          /* body text on light */
+  --muted: #6c6472;        /* secondary text on light (4.5:1 on --paper) */
+  --line: #ddd3c4;         /* hairlines on light */
+  --neon: #ff3d8b;         /* primary action / brand accent (pink neon) */
+  --neon-2: #e02a74;       /* hover */
+  --gold: #f2b544;         /* small highlights: stars, "free" tag, eyebrows on dark */
+  --sky: #6fd3ff;          /* rare cool accent (getting-around, info) */
+  --ok: #2fb67c;  --warn: #f2a23a;  --bad: #e5484d;
+
+  /* Type */
+  --serif: "Fraunces", Georgia, serif;          /* display, weights 300/400, italic for emphasis */
+  --sans: "Inter Tight", system-ui, sans-serif; /* UI + body, 400/500/600 */
+  --h-hero: clamp(3rem, 7.6vw, 7.2rem);
+  --h-1: clamp(2.2rem, 4.6vw, 4rem);
+  --h-2: clamp(1.7rem, 3vw, 2.6rem);
+  --h-3: clamp(1.2rem, 1.8vw, 1.5rem);
+  --body: 1.0625rem;   --small: .875rem;   --eyebrow: .72rem;
+  --lh-display: 1.04;  --lh-body: 1.6;
+  --track-display: -.02em;  --track-eyebrow: .18em;
+
+  /* Space + layout */
+  --gutter: clamp(16px, 4vw, 56px);
+  --section: clamp(72px, 10vw, 140px);
+  --max: 1240px;
+  --measure: 62ch;
+  --header-h: 72px;
+
+  /* Shape */
+  --r-section: 34px;   /* top corners of sections that slide over the previous one */
+  --r-media: 20px;
+  --r-card: 16px;
+  --r-pill: 999px;
+  --shadow-lift: 0 30px 80px -24px rgba(14,11,20,.45), 0 0 0 1px rgba(14,11,20,.06);
+  --shadow-soft: 0 12px 40px -18px rgba(14,11,20,.35);
+
+  /* Motion: one curve for everything */
+  --ease: cubic-bezier(.2,.7,.2,1);
+  --t-fast: .2s;  --t-ui: .35s;  --t-scene: .9s;
+  --reveal-y: 18px;  --stagger: .12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
