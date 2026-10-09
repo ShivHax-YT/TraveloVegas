@@ -1,9 +1,10 @@
 // TraveloVegas: header states, mobile menu + bottom bar, hero parallax, rail controls, "Plan my night",
-// category filters and "Show all", the Strip map, the 21+ gate, Lenis.
+// category filters and "Show all", the Strip map, the 21+ gate, background video controls, Lenis.
 // The hero reveal is CSS (site.css) so copy is visible even if this file never runs.
 (() => {
   const root = document.documentElement;
-  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+  let calm = motionQuery.matches; // updated live below
   const desktop = matchMedia("(min-width: 900px)");
   const header = document.querySelector("[data-header]");
   const hero = document.querySelector(".hero");
@@ -12,18 +13,57 @@
   const bar = document.querySelector(".bottom-bar");
   const top = hero ?? document.querySelector(".cat-hero"); // the bottom bar appears once this scrolls away
   const darks = [...document.querySelectorAll(".is-dark")];
+  const main = document.querySelector("main");
+  const footer = document.querySelector(".site-footer");
+  const skip = document.querySelector(".skip");
 
-  const lenis = !calm && window.Lenis ? new Lenis({ autoRaf: true }) : null;
-  if (calm) hero?.querySelector("video")?.pause(); // poster only when motion is reduced
+  let lenis = !calm && window.Lenis ? new Lenis({ autoRaf: true }) : null;
 
-  // ----- In-page links glide with Lenis; without it the browser jumps natively -----
+  // ----- Locks: the mobile menu and the 21+ gate each make parts of the page inert and stop scrolling.
+  // Held per reason, so releasing one (say the menu closing at 900px) never releases the other. -----
+  const locks = new Map();
+  const lockable = [skip, header, main, footer, bar].filter(Boolean);
+  const lock = (reason, els) => {
+    if (els) locks.set(reason, els); else locks.delete(reason);
+    const held = new Set([...locks.values()].flat());
+    lockable.forEach((el) => { el.inert = held.has(el); });
+    root.classList.toggle("is-locked", locks.size > 0);
+    if (locks.size) lenis?.stop(); else lenis?.start();
+  };
+
+  // ----- Background videos: pause button (WCAG 2.2.2); aria-pressed="true" = paused. Paused under reduced motion. -----
+  const videos = [...document.querySelectorAll("[data-video-toggle]")].map((btn) => {
+    const video = btn.parentElement.querySelector("[data-video]");
+    const set = (paused) => {
+      if (paused) video.pause(); else video.play().catch(() => {});
+      btn.setAttribute("aria-pressed", String(paused));
+    };
+    btn.addEventListener("click", () => set(btn.getAttribute("aria-pressed") !== "true"));
+    set(calm);
+    return set;
+  });
+
+  // Reduced motion switched on mid-visit: stop video, smooth scroll and parallax right away.
+  motionQuery.addEventListener("change", (e) => {
+    calm = e.matches;
+    if (!calm) return;
+    videos.forEach((set) => set(true));
+    lenis?.destroy();
+    lenis = null;
+    if (media) { media.style.translate = ""; copy.style.translate = ""; copy.style.opacity = ""; }
+  });
+
+  // ----- In-page links: glide with Lenis (else the browser jumps), then focus the target's heading -----
+  const focusIn = (target) =>
+    (target.matches('[tabindex="-1"]') ? target : target.querySelector('[tabindex="-1"]'))?.focus({ preventScroll: true });
   document.addEventListener("click", (e) => {
     const link = e.target.closest('a[href^="#"]:not(.skip)');
     const target = link && document.getElementById(link.hash.slice(1));
-    if (!lenis || !target || e.defaultPrevented) return;
+    if (!target || e.defaultPrevented) return;
+    if (!lenis) { setTimeout(() => focusIn(target)); return; } // native jump, then focus
     e.preventDefault();
     history.pushState(null, "", link.hash);
-    lenis.scrollTo(target, { onComplete: () => target.querySelector('[tabindex="-1"]')?.focus({ preventScroll: true }) });
+    lenis.scrollTo(target, { onComplete: () => focusIn(target) });
   });
 
   // ----- Scroll-driven state: one passive listener, one rAF per frame -----
@@ -66,14 +106,11 @@
   // ----- Mobile menu sheet -----
   const menuBtn = header.querySelector(".menu-btn");
   const panel = document.getElementById("site-menu");
-  const behind = [document.querySelector("main"), document.querySelector(".site-footer"), bar].filter(Boolean);
   const setMenu = (open) => {
     menuBtn.setAttribute("aria-expanded", String(open));
     header.classList.toggle("menu-open", open);
-    root.classList.toggle("is-locked", open);
-    behind.forEach((el) => { el.inert = open; });
-    if (open) { lenis?.stop(); panel.querySelector("a")?.focus(); }
-    else lenis?.start();
+    lock("menu", open ? [main, footer, bar].filter(Boolean) : null);
+    if (open) panel.querySelector("a")?.focus();
   };
   menuBtn.addEventListener("click", () => setMenu(menuBtn.getAttribute("aria-expanded") !== "true"));
   panel.addEventListener("click", (e) => { if (e.target.closest("a") && !desktop.matches) setMenu(false); });
@@ -226,19 +263,26 @@
     const pins = [...map.querySelectorAll(".pin")];
     const cards = [...map.querySelectorAll(".map-cards > .card")];
     const hint = map.querySelector(".map-hint");
-    const show = (id) => {
+    // Focus only swaps the card; a tap, click, Enter or Space also brings it into view (it sits above the map on phones).
+    const show = (id, reveal = false) => {
       cards.forEach((c) => { c.hidden = c.dataset.pin !== id; });
       pins.forEach((p) => {
         p.classList.toggle("is-active", p.dataset.pin === id);
         p.setAttribute("aria-pressed", String(p.dataset.pin === id));
       });
       hint.hidden = Boolean(id);
+      const card = reveal && cards.find((c) => !c.hidden);
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      if (r.top >= header.offsetHeight && r.bottom <= innerHeight) return;
+      if (lenis) lenis.scrollTo(card);
+      else card.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
     };
     pins.forEach((p) => {
-      p.addEventListener("click", () => show(p.dataset.pin));
+      p.addEventListener("click", () => show(p.dataset.pin, true));
       p.addEventListener("focus", () => show(p.dataset.pin));
       p.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(p.dataset.pin); }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(p.dataset.pin, true); }
       });
     });
     show(null);
@@ -250,7 +294,6 @@
   if (gate) {
     const KEY = "tv-21";
     const list = document.querySelector("[data-gated]");
-    const blocked = [document.querySelector(".skip"), header, document.querySelector("main"), document.querySelector(".site-footer"), bar].filter(Boolean);
     const reveal = () => {
       gate.remove();
       if (list) list.hidden = false;
@@ -262,9 +305,7 @@
       gate.classList.add("is-modal");
       gate.setAttribute("role", "dialog");
       gate.setAttribute("aria-modal", "true");
-      root.classList.add("is-locked");
-      blocked.forEach((el) => { el.inert = true; });
-      lenis?.stop();
+      lock("gate", lockable);
       const focusables = () => [...gate.querySelectorAll("a[href], button:not([disabled])")];
       gate.addEventListener("keydown", (e) => {
         if (e.key !== "Tab") return;
@@ -276,9 +317,7 @@
       gate.querySelector("[data-gate-yes]").addEventListener("click", () => {
         try { localStorage.setItem(KEY, "yes"); } catch {}
         reveal();
-        root.classList.remove("is-locked");
-        blocked.forEach((el) => { el.inert = false; });
-        lenis?.start();
+        lock("gate", null);
         document.getElementById("cat-title")?.focus();
       });
       focusables()[0].focus();

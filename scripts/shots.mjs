@@ -7,6 +7,7 @@ import { pathToFileURL } from "node:url";
 
 const PAGES = [
   ["", "dist/index.html"],
+  ["shows-", "dist/shows/index.html"],
   ["eat-", "dist/eat/index.html"],
   ["21-plus-", "dist/21-plus/index.html"],
 ];
@@ -25,6 +26,7 @@ const shoot = async (file, w, h, out, { gatePassed = true, fullPage = true } = {
 for (const [prefix, file] of PAGES.filter(([, f]) => existsSync(f))) {
   for (const [w, h] of [[1440, 900], [768, 1024], [390, 844]]) await shoot(file, w, h, `${prefix}${w}.png`);
 }
-if (existsSync(PAGES[2][1])) await shoot(PAGES[2][1], 390, 844, "21-plus-gate-390.png", { gatePassed: false, fullPage: false });
+const gated = PAGES.find(([prefix]) => prefix === "21-plus-")[1];
+if (existsSync(gated)) await shoot(gated, 390, 844, "21-plus-gate-390.png", { gatePassed: false, fullPage: false });
 await browser.close();
-console.log("shots: saved screens/latest/{,eat-,21-plus-}{1440,768,390}.png + 21-plus-gate-390.png");
+console.log("shots: saved screens/latest/{,shows-,eat-,21-plus-}{1440,768,390}.png + 21-plus-gate-390.png");

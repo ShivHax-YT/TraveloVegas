@@ -15,6 +15,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 // ---------- Listing rules (CLAUDE.md 2, 3, 9) ----------
 const data = readJson("data/listings.json");
 const affiliates = readJson("config/affiliates.json");
+const mediaInfo = readJson("config/media.json");
 const sourced = (l) => l.sources?.length > 0;
 const unconfirmed = (l) => l.status === "likely_open" || /unconfirmed/i.test(l.notes ?? "");
 const confirmed = (l) => !unconfirmed(l);
@@ -59,7 +60,7 @@ const nextDated = (l) => {
 // ---------- Cards (text-first; an image frame only when the listing has "image") ----------
 const LABELS = {
   shows: "Show", free: "Free", attractions: "Attraction", tours: "Tour", restaurants: "Restaurant",
-  nightclubs: "Nightclub", "pool-party": "Pool party", transportation: "Getting around",
+  nightclubs: "Nightclub", "pool-party": "Pool party", transportation: "Getting around", events: "Event",
   "strip-clubs": "Strip club", "adult-shows": "Adult show", dispensaries: "Dispensary",
 };
 const CUISINE = (c) => (c === "bbq" ? "BBQ" : c.replace(/-/g, " ").replace(/^\w/, (x) => x.toUpperCase()));
@@ -83,11 +84,19 @@ const bookingUrl = (l) => {
 
 const cardImage = (l, root) => {
   if (!l.image || l.adult) return "";
-  const src = /^(https?:)?\//.test(l.image) ? l.image : `${root}${MEDIA}/${l.image}`;
-  // Flow (AI) media is the default; a real photo carries image_credit instead of the Illustrative caption.
-  const note = l.image_credit ? `<span class="illus">${esc(l.image_credit)}</span>` : `<span class="illus" aria-hidden="true">Illustrative</span>`;
+  const local = !/^(https?:)?\//.test(l.image);
+  const src = local ? `${root}${MEDIA}/${l.image}` : l.image;
+  // Local files follow config/media.json; remote images carry their own image_credit.
+  const note = local ? captionFor(l.image) : l.image_credit ? `<span class="illus">${esc(l.image_credit)}</span>` : "";
   return `<div class="card-media"><img src="${esc(src)}" alt="" loading="lazy" decoding="async">${note}</div>`;
 };
+
+// Button text by booking type; the disclosure line stays next to every block of these.
+const bookLabel = (l) =>
+  /(^|\.)opentable\.com$/.test(new URL(l.booking_url).hostname) ? "Reserve a table"
+    : l.category === "tours" ? "Book a tour"
+    : l.category === "events" || upcomingEvent(l) ? "Get tickets"
+    : "Check tickets";
 
 const ages = (l) => (typeof l.min_age !== "number" ? "" : l.min_age > 0 ? `Ages ${l.min_age}+` : "All ages");
 
@@ -103,7 +112,7 @@ const card = (l, { root = "", attrs = "", level = 3 } = {}) => {
           ${l.price != null ? `<p class="card-price">${esc(l.price)}</p>` : ""}
           ${ages(l) ? `<p class="card-ages">${ages(l)}</p>` : ""}
           <p class="card-checked">Last checked <time datetime="${esc(l.last_checked)}">${shortDate(l.last_checked)}</time></p>
-          ${book ? `<a class="btn btn-neon card-book" href="${esc(book)}" target="_blank" rel="sponsored noopener">Check tickets</a>` : ""}
+          ${book ? `<a class="btn btn-neon card-book" href="${esc(book)}" target="_blank" rel="sponsored noopener">${bookLabel(l)}</a>` : ""}
         </div>
       </li>`;
 };
@@ -227,8 +236,21 @@ const stripMap = (() => {
   const y = (i) => TOP + i * ROW;
   const H = y(strip.resorts.length - 1) + 56;
   const spots = [strip.downtown, ...strip.resorts];
-  // A listing's own "map" (resort id) wins over matching its venue.
-  const spotFor = (l) => spots.find((r) => (l.map ? r.id === l.map : r.match.some((m) => new RegExp(m).test(l.venue ?? ""))));
+  // A listing's own "map" (resort id) wins. Otherwise an exact name match, then the match that starts
+  // earliest in the venue, then the longest ("Sphere (by The Venetian)" is Sphere, not The Venetian).
+  const spotFor = (l) => {
+    if (l.map) return spots.find((r) => r.id === l.map);
+    const venue = l.venue ?? "";
+    let best = null;
+    for (const r of spots) {
+      if (r.name.toLowerCase() === venue.toLowerCase()) return r;
+      for (const m of r.match) {
+        const hit = new RegExp(m).exec(venue);
+        if (hit && (!best || hit.index < best.at || (hit.index === best.at && hit[0].length > best.len))) best = { r, at: hit.index, len: hit[0].length };
+      }
+    }
+    return best?.r;
+  };
   const pins = Map.groupBy(pickable.filter((l) => l.featured === true && spotFor(l)), (l) => spotFor(l).id);
   const pin = (id, cx, cy, name) => {
     const ls = pins.get(id);
@@ -261,28 +283,50 @@ const stripMap = (() => {
   return { svg, cards: cards.join("\n      "), count: [...pins.values()].flat().length };
 })();
 
-// ---------- Media ----------
+// ---------- Media (config/media.json decides the AI caption and the footer credits) ----------
 const exists = (file) => existsSync(join(MEDIA, file));
-const caption = `<span class="illus" aria-hidden="true">Illustrative</span>`; // AI media (CLAUDE.md rule 5)
+const used = new Set();
+const info = (file) => {
+  if (!mediaInfo[file]) throw new Error(`build: ${MEDIA}/${file} is not in config/media.json (ai + credit)`);
+  used.add(file);
+  return mediaInfo[file];
+};
+const captionFor = (file) => (info(file).ai ? `<span class="illus" aria-hidden="true">Illustrative</span>` : ""); // CLAUDE.md rule 5
 const bandMedia = (file, root, cls = "tile-media") =>
   exists(file)
-    ? `<img class="${cls}" src="${root}${MEDIA}/${file}" alt="" loading="lazy" decoding="async">${caption}`
+    ? `<img class="${cls}" src="${root}${MEDIA}/${file}" alt="" loading="lazy" decoding="async">${captionFor(file)}`
     : `<span class="${cls} ph" aria-hidden="true"></span>`;
-const heroMedia = (root) => {
-  if (!exists("hero.mp4")) return `<div class="hero-media ph" aria-hidden="true"></div>`;
-  const poster = exists("hero-poster.jpg") ? ` poster="${root}${MEDIA}/hero-poster.jpg"` : "";
-  const mobile = exists("hero-mobile.mp4") ? `<source src="${root}${MEDIA}/hero-mobile.mp4" type="video/mp4" media="(max-width: 639px) and (orientation: portrait)">` : "";
-  return `<video class="hero-media" autoplay muted loop playsinline preload="metadata"${poster} aria-hidden="true">${mobile}<source src="${root}${MEDIA}/hero.mp4" type="video/mp4"></video>${caption}`;
+// <base>.mp4 (+ <base>-mobile.mp4, <base>-poster.jpg) as a muted loop with a pause button (WCAG 2.2.2).
+// js/site.js keeps it paused under reduced motion. Null when <base>.mp4 isn't there.
+const videoMedia = (base, root, cls) => {
+  if (!exists(`${base}.mp4`)) return null;
+  const src = (f) => `${root}${MEDIA}/${f}`;
+  const poster = exists(`${base}-poster.jpg`) && info(`${base}-poster.jpg`) ? ` poster="${src(`${base}-poster.jpg`)}"` : "";
+  const mobile = exists(`${base}-mobile.mp4`) && info(`${base}-mobile.mp4`)
+    ? `<source src="${src(`${base}-mobile.mp4`)}" type="video/mp4" media="(max-width: 639px) and (orientation: portrait)">` : "";
+  return `<video class="${cls}" autoplay muted loop playsinline preload="metadata"${poster} aria-hidden="true" data-video>${mobile}<source src="${src(`${base}.mp4`)}" type="video/mp4"></video>${captionFor(`${base}.mp4`)}
+      <button class="video-toggle" type="button" aria-pressed="false" aria-label="Pause background video" data-video-toggle>
+        <svg class="icon-pause" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2h3v12H4zM9 2h3v12H9z"/></svg>
+        <svg class="icon-play" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2l10 6-10 6z"/></svg>
+      </button>`;
 };
-const ogImage = exists("og-image.jpg")
+const heroMedia = (root) => videoMedia("hero", root, "hero-media") ?? `<div class="hero-media ph" aria-hidden="true"></div>`;
+// Category heroes: cat-<band>.mp4 when present, else band-<band>.jpg, else a placeholder.
+const catMedia = (band, root) => videoMedia(`cat-${band}`, root, "cat-media") ?? bandMedia(`band-${band}.jpg`, root, "cat-media");
+const ogImage = exists("og-image.jpg") && info("og-image.jpg")
   ? `<meta property="og:image" content="${SITE}${MEDIA}/og-image.jpg">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta name="twitter:card" content="summary_large_image">`
   : `<meta name="twitter:card" content="summary">`;
+// One footer line naming the credits of real (non-AI) media the site actually uses.
+const credits = () => {
+  const names = [...new Set([...used].map((f) => mediaInfo[f]).filter((m) => !m.ai && m.credit).map((m) => m.credit))];
+  return names.length ? `<p class="footer-credits">${esc(names.join(". "))}.</p>` : "";
+};
 
 // ---------- Templates ----------
 const PARTIALS = ["head", "header", "footer"];
 // {{key}} from vars; {{band:x}} is a home tile image. Partials see the same vars. Unknown keys fail the build.
 const render = (tpl, vars, root) => {
-  const all = { root, home: root || "./", year: String(now.getFullYear()), ogImage, robots: "index, follow", ...vars };
+  const all = { root, home: root || "./", year: String(now.getFullYear()), ogImage, credits: credits(), robots: "index, follow", ...vars };
   const fill = (s) => s.replace(/\{\{([\w:-]+)\}\}/g, (_, k) => {
     if (k.startsWith("band:")) return bandMedia(`band-${k.slice(5)}.jpg`, root);
     if (PARTIALS.includes(k)) return fill(read(`src/partials/${k}.html`));
@@ -334,7 +378,7 @@ const eatGroups = (page, ls, root) => {
           <ul role="list">${groups.map((g) => `<li><a href="#cuisine-${g.v}">${esc(g.t)}</a></li>`).join("")}</ul>
         </nav>`;
   const html = groups.map((g) => `<section class="cuisine" aria-labelledby="cuisine-${g.v}">
-          <h3 class="cuisine-title" id="cuisine-${g.v}">${esc(g.t)} <span class="cuisine-count">${g.members.length}</span></h3>
+          <h3 class="cuisine-title" id="cuisine-${g.v}" tabindex="-1">${esc(g.t)} <span class="cuisine-count">${g.members.length}</span></h3>
           <ul class="cat-grid" id="cuisine-list-${g.v}" role="list">
       ${g.members.map((l, i) => card(l, { root, level: 4, attrs: i >= EAT_SHOWN ? " data-more" : "" })).join("\n      ")}
           </ul>
@@ -361,7 +405,7 @@ const renderPage = (page, root) => {
     h1: esc(page.h1),
     crumb: esc(page.crumb),
     answer: esc(page.answer.replace("{n}", n)),
-    bandMedia: bandMedia(`band-${page.band}.jpg`, root, "cat-media"),
+    bandMedia: catMedia(page.band, root),
     chips: chips.length < 2 ? "" : `<div class="chips filter-chips" role="group" aria-label="Filter ${esc(page.crumb.toLowerCase())}">
           <button class="chip" type="button" aria-pressed="true" value="">All</button>
           ${chips.map(([v, t]) => `<button class="chip" type="button" aria-pressed="false" value="${esc(v)}">${esc(t)}</button>`).join("\n          ")}
