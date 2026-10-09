@@ -1,0 +1,6 @@
+{
+  "_about": "Affiliate query strings appended to a listing's booking_url, keyed by host (e.g. \"vegas.com\": \"pid=12345\"). Empty until the accounts are approved; an empty value leaves booking_url untouched.",
+  "vegas.com": "",
+  "viator.com": "",
+  "getyourguide.com": ""
+}

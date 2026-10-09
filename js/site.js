@@ -1,4 +1,5 @@
-// TraveloVegas: header states, mobile menu + bottom bar, hero parallax, rail controls, "Plan my night", Lenis.
+// TraveloVegas: header states, mobile menu + bottom bar, hero parallax, rail controls, "Plan my night",
+// category filters, the 21+ gate, Lenis.
 // The hero reveal is CSS (site.css) so copy is visible even if this file never runs.
 (() => {
   const root = document.documentElement;
@@ -9,6 +10,7 @@
   const media = hero?.querySelector(".hero-media");
   const copy = hero?.querySelector(".hero-copy");
   const bar = document.querySelector(".bottom-bar");
+  const top = hero ?? document.querySelector(".cat-hero"); // the bottom bar appears once this scrolls away
   const darks = [...document.querySelectorAll(".is-dark")];
 
   const lenis = !calm && window.Lenis ? new Lenis({ autoRaf: true }) : null;
@@ -35,7 +37,7 @@
       const r = el.getBoundingClientRect();
       return r.top <= mid && r.bottom >= mid;
     });
-    const heroBottom = hero ? hero.getBoundingClientRect().bottom : 0;
+    const heroBottom = top ? top.getBoundingClientRect().bottom : 0;
 
     header.classList.toggle("solid", y > vh * 0.6);
     header.classList.toggle("over-dark", overDark);
@@ -125,26 +127,28 @@
       hint.hidden = vibe.length > 0;
       setState(vibe.length || budget || who ? "selecting" : "idle");
     };
+    // Who comes from tags: Kids = "family" (adult listings never reach the pool), Couple = "date-night", Friends = "group".
+    const WHO = { kids: "family", couple: "date-night", friends: "group" };
 
     const render = () => {
       const { vibe, budget, who } = picks();
-      const fits = cards.filter((c) =>
-        c.dataset.vibe.split(" ").some((v) => vibe.includes(v)) &&
-        (who !== "kids" || c.dataset.kids === "yes") &&
-        (!budget || c.dataset.budget === budget || c.dataset.budget === ""));
-      // Known price matches first; unpriced listings fill the rest.
-      const chosen = [...fits.filter((c) => !budget || c.dataset.budget), ...fits.filter((c) => budget && !c.dataset.budget)].slice(0, LIMIT);
+      const words = (c, key) => c.dataset[key].split(" ");
+      const chosen = cards.filter((c) =>
+        words(c, "vibe").some((v) => vibe.includes(v)) &&
+        (!WHO[who] || words(c, "tags").includes(WHO[who])) &&
+        (!budget || words(c, "budget").includes(budget))).slice(0, LIMIT);
       cards.forEach((c) => { c.hidden = true; });
       chosen.forEach((c) => { c.hidden = false; rail.append(c); });
-      rail.scrollLeft = 0;
-      rail.dispatchEvent(new Event("railchange"));
 
       const label = (g) => picked(g).map((c) => c.textContent).join(", ");
       plan.querySelector(".plan-picked").textContent = [label("vibe"), label("budget"), label("who")].filter(Boolean).join(" · ");
       status.textContent = chosen.length
         ? `${chosen.length} ${chosen.length === 1 ? "pick" : "picks"} for your night.`
         : "Nothing matches all of that yet. Try another vibe or budget.";
+      // Show the rail before the arrows measure it, or Next stays disabled.
       setState("results");
+      rail.scrollLeft = 0;
+      rail.dispatchEvent(new Event("railchange"));
     };
 
     groups.forEach((g) => g.addEventListener("click", (e) => {
@@ -153,6 +157,9 @@
       const on = chip.getAttribute("aria-pressed") !== "true";
       if (!("multi" in g.dataset)) chips(g).forEach((c) => c.setAttribute("aria-pressed", "false"));
       chip.setAttribute("aria-pressed", String(on));
+      // A group with an "Any" chip never ends up empty.
+      const any = chips(g).find((c) => c.value === "");
+      if (any && !picked(g.dataset.group).length) any.setAttribute("aria-pressed", "true");
       refresh();
     }));
     showBtn.addEventListener("click", () => { render(); plan.querySelector("[data-edit]").focus(); });
@@ -167,9 +174,49 @@
       groups.forEach((g) => {
         const want = [].concat(saved[g.dataset.group] ?? []);
         chips(g).forEach((c) => c.setAttribute("aria-pressed", String(want.includes(c.value))));
+        const any = chips(g).find((c) => c.value === "");
+        if (any && !picked(g.dataset.group).length) any.setAttribute("aria-pressed", "true");
       });
       refresh();
       if (saved.state === "results" && picks().vibe.length) render();
     }
+  }
+
+  // ----- Category filter chips (one choice; "All" clears) -----
+  document.querySelectorAll(".filter-chips").forEach((group) => {
+    const list = group.closest(".cat-list");
+    const cards = [...list.querySelectorAll(".cat-grid > .card")];
+    const count = list.querySelector(".cat-count");
+    group.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      group.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+      let shown = 0;
+      cards.forEach((c) => {
+        c.hidden = Boolean(chip.value) && !c.dataset.filter.split(" ").includes(chip.value);
+        if (!c.hidden) shown++;
+      });
+      count.textContent = `${shown} ${shown === 1 ? "place" : "places"}${chip.value ? ` · ${chip.textContent}` : ""}`;
+    });
+  });
+
+  // ----- 21+ gate: shown until the visitor confirms; the answer is remembered when storage allows -----
+  const gate = document.querySelector("[data-gate]");
+  if (gate) {
+    const KEY = "tv-21";
+    let ok = false;
+    try { ok = localStorage.getItem(KEY) === "yes"; } catch {}
+    const blocked = [document.querySelector(".site-header"), document.querySelector("main"), document.querySelector(".site-footer"), bar].filter(Boolean);
+    const lock = (on) => {
+      gate.hidden = !on;
+      root.classList.toggle("is-locked", on);
+      blocked.forEach((el) => { el.inert = on; });
+      if (on) { lenis?.stop(); gate.querySelector("[data-gate-yes]").focus(); } else lenis?.start();
+    };
+    gate.querySelector("[data-gate-yes]").addEventListener("click", () => {
+      try { localStorage.setItem(KEY, "yes"); } catch {}
+      lock(false);
+    });
+    lock(!ok);
   }
 })();
