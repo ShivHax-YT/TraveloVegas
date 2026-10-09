@@ -196,7 +196,7 @@ em { font-style: italic; font-weight: 300; }
   inset: 0;
   background: linear-gradient(to top, color-mix(in srgb, var(--night) 85%, transparent), transparent 55%);
 }
-.hero-media { position: absolute; inset: 0; animation: settle 2.4s var(--ease) both; }
+.hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: settle 2.4s var(--ease) both; }
 .hero-copy {
   position: relative;
   z-index: 1;
@@ -261,7 +261,7 @@ em { font-style: italic; font-weight: 300; }
   inset: 0;
   background: linear-gradient(to top, color-mix(in srgb, var(--night) 85%, transparent), transparent 55%);
 }
-.tile-media { position: absolute; inset: 0; transition: transform var(--t-scene) var(--ease); }
+.tile-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--t-scene) var(--ease); }
 .tile-label {
   position: absolute;
   left: 20px;
@@ -333,6 +333,64 @@ em { font-style: italic; font-weight: 300; }
 }
 .pill-seasonal { background: var(--gold); }
 .pill-closed { background: var(--warn); }
+
+/* ---------- AI media caption (rule 5) ---------- */
+.illus {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  padding: 5px 9px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--night) 60%, transparent);
+  color: var(--paper);
+  font: 500 var(--eyebrow)/1 var(--sans);
+  letter-spacing: .04em;
+}
+.hero > .illus { top: auto; right: var(--gutter); bottom: calc(36px + 16px); }
+
+/* ---------- 8. "Plan my night" picker: idle -> selecting -> results -> (edit) ---------- */
+.plan { padding-block: var(--section); scroll-margin-top: var(--header-h); }
+.plan[data-state="results"] .picker,
+.plan:not([data-state="results"]) .plan-summary,
+.plan:not([data-state="results"]) .plan-rail,
+.plan:not([data-state="results"]) .rail-nav { display: none; }
+.picker {
+  display: grid;
+  gap: 28px;
+  margin-top: 40px;
+  @media (min-width: 900px) { grid-template-columns: 2fr 1fr 1.4fr; column-gap: 48px; }
+}
+.chip-group .eyebrow { margin-bottom: 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink);
+  font: 500 var(--small)/1 var(--sans);
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease);
+}
+.chip:hover { border-color: var(--ink); }
+.chip:active { transform: scale(.96); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  @media (min-width: 900px) { grid-column: 1 / -1; }
+}
+.picker-actions .btn:disabled { opacity: .4; transform: none; cursor: default; }
+.picker-hint { color: var(--muted); font-size: var(--small); }
+.plan-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 32px; }
+.plan-picked { font: 300 var(--h-3)/1.3 var(--serif); }
+.plan-status { margin-top: 12px; color: var(--muted); font-size: var(--small); }
+.plan-rail { margin-top: 24px; }
+.plan-rail .card { border: 1px solid var(--line); }
 
 /* ---------- Placeholder blocks (built in later rounds) ---------- */
 .upcoming { padding-block: calc(var(--section) * .6); }

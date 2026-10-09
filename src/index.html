@@ -46,7 +46,7 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-media ph" aria-hidden="true"></div>
+      {{heroMedia}}
       <div class="hero-copy wrap">
         <p class="eyebrow hero-line" style="--d: .15s">Las Vegas, verified weekly</p>
         <h1 class="hero-title hero-line" id="hero-title" style="--d: .35s">The Strip, <em>without the guesswork.</em></h1>
@@ -62,14 +62,14 @@
       <div class="wrap">
         <h2 class="section-title" id="bands-title">What are you in the mood for?</h2>
         <ul class="band-grid" role="list">
-          <li><a class="tile" href="shows/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Shows</span></a></li>
-          <li><a class="tile" href="free/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Free</span></a></li>
-          <li><a class="tile" href="eat/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Eat</span></a></li>
-          <li><a class="tile" href="nightlife/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Nightlife</span></a></li>
-          <li><a class="tile" href="pools/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Pools</span></a></li>
-          <li><a class="tile" href="tours/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Tours</span></a></li>
-          <li><a class="tile" href="getting-around/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Getting around</span></a></li>
-          <li><a class="tile" href="21-plus/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">21+</span></a></li>
+          <li><a class="tile" href="shows/">{{band:shows}}<span class="tile-label">Shows</span></a></li>
+          <li><a class="tile" href="free/">{{band:free}}<span class="tile-label">Free</span></a></li>
+          <li><a class="tile" href="eat/">{{band:food}}<span class="tile-label">Eat</span></a></li>
+          <li><a class="tile" href="nightlife/">{{band:nightlife}}<span class="tile-label">Nightlife</span></a></li>
+          <li><a class="tile" href="pools/">{{band:pools}}<span class="tile-label">Pools</span></a></li>
+          <li><a class="tile" href="tours/">{{band:tours}}<span class="tile-label">Tours</span></a></li>
+          <li><a class="tile" href="getting-around/">{{band:getting-around}}<span class="tile-label">Getting around</span></a></li>
+          <li><a class="tile" href="21-plus/">{{band:21plus}}<span class="tile-label">21+</span></a></li>
         </ul>
       </div>
     </section>
@@ -96,13 +96,70 @@
       </div>
     </section>
 
-    <div class="upcoming">
-      <section class="block" id="plan" aria-labelledby="plan-title">
-        <div class="wrap block-inner">
-          <h2 class="block-title" id="plan-title">Plan my night</h2>
-          <p>Pick a vibe, a budget and your crew. We'll line up a night that fits.</p>
+    <section class="plan" id="plan" aria-labelledby="plan-title" data-state="idle">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title" id="plan-title" tabindex="-1">Plan my night</h2>
+            <p class="lede">Pick a vibe, a budget and your crew. We'll line up a night that fits.</p>
+          </div>
+          <div class="rail-nav" hidden>
+            <button class="rail-btn" type="button" data-dir="-1" aria-controls="plan-rail" aria-label="Previous">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+            <button class="rail-btn" type="button" data-dir="1" aria-controls="plan-rail" aria-label="Next">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
         </div>
-      </section>
+
+        <div class="picker">
+          <div class="chip-group" role="group" aria-labelledby="pick-vibe">
+            <p class="eyebrow" id="pick-vibe">Vibe</p>
+            <div class="chips" data-group="vibe" data-multi>
+              <button class="chip" type="button" aria-pressed="false" value="thrills">Thrills</button>
+              <button class="chip" type="button" aria-pressed="false" value="shows">Shows</button>
+              <button class="chip" type="button" aria-pressed="false" value="free">Free</button>
+              <button class="chip" type="button" aria-pressed="false" value="food">Food</button>
+              <button class="chip" type="button" aria-pressed="false" value="nightlife">Nightlife</button>
+              <button class="chip" type="button" aria-pressed="false" value="family">Family</button>
+            </div>
+          </div>
+          <div class="chip-group" role="group" aria-labelledby="pick-budget">
+            <p class="eyebrow" id="pick-budget">Budget</p>
+            <div class="chips" data-group="budget">
+              <button class="chip" type="button" aria-pressed="false" value="1" aria-label="Budget: low">$</button>
+              <button class="chip" type="button" aria-pressed="false" value="2" aria-label="Budget: mid">$$</button>
+              <button class="chip" type="button" aria-pressed="false" value="3" aria-label="Budget: high">$$$</button>
+            </div>
+          </div>
+          <div class="chip-group" role="group" aria-labelledby="pick-who">
+            <p class="eyebrow" id="pick-who">Who</p>
+            <div class="chips" data-group="who">
+              <button class="chip" type="button" aria-pressed="false" value="solo">Solo</button>
+              <button class="chip" type="button" aria-pressed="false" value="couple">Couple</button>
+              <button class="chip" type="button" aria-pressed="false" value="friends">Friends</button>
+              <button class="chip" type="button" aria-pressed="false" value="kids">Kids</button>
+            </div>
+          </div>
+          <div class="picker-actions">
+            <button class="btn btn-neon btn-lg" type="button" data-show disabled>Show my night</button>
+            <p class="picker-hint">Pick at least one vibe.</p>
+          </div>
+        </div>
+
+        <div class="plan-summary">
+          <p class="plan-picked"></p>
+          <button class="btn btn-ghost" type="button" data-edit>Edit picks</button>
+        </div>
+        <p class="plan-status" role="status" aria-live="polite"></p>
+        <ul class="rail plan-rail" id="plan-rail" role="list" tabindex="0" aria-labelledby="plan-title">
+      {{planPool}}
+        </ul>
+      </div>
+    </section>
+
+    <div class="upcoming">
       <section class="block" id="story" aria-labelledby="story-title">
         <div class="wrap block-inner">
           <h2 class="block-title" id="story-title">One perfect Vegas night, 6pm to 2am</h2>
