@@ -5,7 +5,11 @@ import { dirname, join } from "node:path";
 
 const OUT = "dist";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const RAIL_STATUS = { open: 0, seasonal: 1, temp_closed: 2 }; // also the sort order
+const RAIL_STATUS = new Set(["open", "seasonal", "temp_closed"]);
+const RAIL_MAX = 10;
+const RAIL_PER_CATEGORY = 2;
+const RAIL_SKIP = new Set(["transportation"]); // useful facts, not things to do this week
+const SITE = "https://travelovegas.com/";
 const MEDIA = "assets/media";
 
 // "Plan my night" (PATTERNS #8): vibe and kid-friendliness come from category; budget from the sourced price.
@@ -23,6 +27,16 @@ const shortDate = (iso, withYear = true) => {
   return `${MONTHS[m - 1]} ${d}${!withYear || y === new Date().getFullYear() ? "" : `, ${y}`}`;
 };
 const sourced = (l) => l.sources?.length > 0; // never claim a price or "free" without a source
+const unconfirmed = (l) => /unconfirmed/i.test(l.notes ?? "");
+
+// Whole days from today to an ISO date, counted on calendar dates so time zones can't shift it.
+const now = new Date();
+const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+const daysUntil = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return (Date.UTC(y, m - 1, d) - today) / 864e5;
+};
+const soon = (iso) => typeof iso === "string" && daysUntil(iso) >= 0 && daysUntil(iso) <= 30;
 
 // "$" free or under $50, "$$" under $120, "$$$" above; "" when there's no sourced price to go on.
 const budget = (l) => {
@@ -33,6 +47,7 @@ const budget = (l) => {
 };
 
 const pill = (l) => {
+  if (unconfirmed(l)) return `<p class="pill pill-muted">Not yet confirmed</p>`; // category pages only; never in the rail or planner
   if (l.status === "seasonal") return `<p class="pill pill-seasonal">Seasonal</p>`;
   if (l.status === "temp_closed") return `<p class="pill pill-closed">${l.reopens ? `Reopens ${shortDate(l.reopens, false)}` : "Temporarily closed"}</p>`;
   return "";
@@ -54,15 +69,78 @@ const card = (l, attrs = "") => {
 };
 
 const data = JSON.parse(readFileSync("data/listings.json", "utf8"));
-const live = data.listings.filter((l) => l.status !== "closed");
-const onThisWeek = live
-  .filter((l) => l.status in RAIL_STATUS && !l.adult) // 21+ listings never appear outside the gated pages
-  .sort((a, b) => RAIL_STATUS[a.status] - RAIL_STATUS[b.status]);
+// Closed listings and listings with no source at all never render anywhere.
+const live = data.listings.filter((l) => l.status !== "closed" && sourced(l));
+// The rail and planner also skip unconfirmed and 21+ listings.
+const pickable = live.filter((l) => !unconfirmed(l) && !l.adult);
+
+// "On this week": max 10. First anything with an event or reopening in the next 30 days, then featured,
+// then a spread across categories (max 2 each) in data order.
+const onThisWeek = (() => {
+  const pool = pickable.filter((l) => RAIL_STATUS.has(l.status) && !RAIL_SKIP.has(l.category));
+  const dated = pool
+    .filter((l) => soon(l.event_date) || soon(l.reopens))
+    .sort((a, b) => Math.min(...[a.event_date, a.reopens].filter(soon).map(daysUntil)) - Math.min(...[b.event_date, b.reopens].filter(soon).map(daysUntil)));
+  const picked = [...new Set([...dated, ...pool.filter((l) => l.featured === true)])].slice(0, RAIL_MAX);
+  const perCategory = (c) => picked.filter((l) => l.category === c).length;
+  const byCategory = Map.groupBy(pool.filter((l) => !picked.includes(l)), (l) => l.category);
+  for (let round = 0; picked.length < RAIL_MAX && round < RAIL_PER_CATEGORY; round++) {
+    for (const [c, ls] of byCategory) {
+      if (picked.length >= RAIL_MAX) break;
+      const next = ls.find((l) => !picked.includes(l));
+      if (next && perCategory(c) < RAIL_PER_CATEGORY) picked.push(next);
+    }
+  }
+  return picked;
+})();
 
 // Every pickable listing is in the HTML; js/site.js shows up to 6 matches.
-const planPool = live.filter((l) => (l.status === "open" || l.status === "seasonal") && !l.adult && VIBES[l.category]);
+const planPool = pickable.filter((l) => (l.status === "open" || l.status === "seasonal") && VIBES[l.category]);
 const planCard = (l) =>
   card(l, ` data-vibe="${VIBES[l.category].join(" ")}" data-budget="${budget(l)}" data-kids="${ADULTS_ONLY.has(l.category) ? "no" : "yes"}" hidden`);
+
+// FAQ (PATTERNS #11): one source for the <details> and the FAQPage JSON-LD.
+const { faq } = JSON.parse(readFileSync("src/faq.json", "utf8"));
+const ids = new Set(data.listings.map((l) => l.id));
+for (const f of faq) {
+  const missing = f.from.filter((id) => !ids.has(id));
+  if (missing.length) throw new Error(`build: FAQ "${f.q}" cites missing listings: ${missing.join(", ")}`);
+  if (/\u2014/.test(f.q + f.a)) throw new Error(`build: em dash in FAQ "${f.q}"`);
+}
+const faqHtml = faq
+  .map((f) => `<details class="faq-item">
+          <summary><h3 class="faq-q">${esc(f.q)}</h3><span class="faq-icon" aria-hidden="true"></span></summary>
+          <div class="faq-a">
+            <p>${esc(f.a)}</p>
+            <p><a class="faq-link" href="${f.link[0]}">${esc(f.link[1])}</a></p>
+          </div>
+        </details>`)
+  .join("\n        ");
+
+// JSON-LD is escaped so a "</script>" inside text can't end the block.
+const jsonLd = (obj) => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;
+const structuredData = [
+  jsonLd({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: `${f.a} <a href="${SITE}${f.link[0]}">${f.link[1]}</a>` },
+    })),
+  }),
+  jsonLd({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "On this week in Las Vegas",
+    numberOfItems: onThisWeek.length,
+    itemListElement: onThisWeek.map((l, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: { "@type": "Place", name: l.name, ...(l.venue && { address: `${l.venue}, Las Vegas, NV` }) },
+    })),
+  }),
+].join("\n  ");
 
 // AI media gets an "Illustrative" caption (CLAUDE.md rule 5).
 const has = (file) => existsSync(join(MEDIA, file));
@@ -82,6 +160,11 @@ const tokens = {
   onThisWeek: onThisWeek.map((l) => card(l)).join("\n      "),
   planPool: planPool.map(planCard).join("\n      "),
   heroMedia: heroMedia(),
+  faq: faqHtml,
+  structuredData,
+  ogImage: has("og-image.jpg")
+    ? `<meta property="og:image" content="${SITE}${MEDIA}/og-image.jpg">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta name="twitter:card" content="summary_large_image">`
+    : `<meta name="twitter:card" content="summary">`,
   year: String(new Date().getFullYear()),
 };
 // {{band:shows}} -> assets/media/band-shows.jpg or its placeholder
@@ -106,4 +189,4 @@ for (const f of readdirSync("css").filter((f) => f.endsWith(".css"))) writeFileS
 cpSync("js", join(OUT, "js"), { recursive: true });
 if (existsSync("assets")) cpSync("assets", join(OUT, "assets"), { recursive: true });
 
-console.log(`build: ${live.length} live listings (${data.listings.length - live.length} closed skipped), ${onThisWeek.length} on this week, ${planPool.length} in plan my night -> ${OUT}/`);
+console.log(`build: ${live.length} live listings (${data.listings.length - live.length} closed or unsourced skipped), ${onThisWeek.length} on this week, ${planPool.length} in plan my night -> ${OUT}/`);

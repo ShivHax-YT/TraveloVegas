@@ -3,14 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Las Vegas Guide: Shows, Free Things and Nights Out | TraveloVegas</title>
-  <meta name="description" content="Shows, free spectacles, food and nights out in Las Vegas, checked by locals and updated every week.">
+  <title>Things to Do in Las Vegas, Checked Weekly | TraveloVegas</title>
+  <meta name="description" content="Shows, free things on the Strip, pool parties, food, nightlife and getting around in Las Vegas. Checked by locals and updated every week.">
   <link rel="canonical" href="https://travelovegas.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="TraveloVegas">
-  <meta property="og:title" content="The Strip, without the guesswork | TraveloVegas">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="The Strip, without the guesswork">
   <meta property="og:description" content="Shows, free spectacles, food and nights out in Las Vegas, checked by locals and updated every week.">
   <meta property="og:url" content="https://travelovegas.com/">
+  {{ogImage}}
   <meta name="theme-color" content="#0e0b14">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +20,7 @@
   <link rel="stylesheet" href="css/site.css">
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
   <script src="js/site.js" defer></script>
+  {{structuredData}}
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -172,13 +175,19 @@
           <p>Where the resorts and monorail stops sit, and how far apart they really are.</p>
         </div>
       </section>
-      <section class="block" id="faq" aria-labelledby="faq-title">
-        <div class="wrap block-inner">
-          <h2 class="block-title" id="faq-title">Vegas questions, answered</h2>
-          <p>Tipping, dress codes, getting around and what's actually free. Straight answers.</p>
-        </div>
-      </section>
     </div>
+
+    <section class="faq" id="faq" aria-labelledby="faq-title">
+      <div class="wrap faq-inner">
+        <div class="faq-head">
+          <h2 class="section-title" id="faq-title">Vegas questions, answered</h2>
+          <p class="lede">Straight answers from what we've checked. Prices and schedules change, so confirm with the venue.</p>
+        </div>
+        <div class="faq-list">
+        {{faq}}
+        </div>
+      </div>
+    </section>
   </main>
 
   <nav class="bottom-bar" aria-label="Quick links">

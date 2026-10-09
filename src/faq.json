@@ -1,0 +1,53 @@
+{
+  "_about": "Home page FAQ. Every answer states only facts from data/listings.json; `from` lists the listing ids it relies on (the build fails if one disappears). `link` is the category page each answer points to. No em dashes.",
+  "faq": [
+    {
+      "q": "What's free on the Strip?",
+      "a": "The Fountains of Bellagio, the Bellagio Conservatory (open 24/7) and the Lake of Dreams at Wynn, which runs every half hour from dusk until 11:30pm. The Welcome to Fabulous Las Vegas sign is free too. Heads up: the sidewalk in front of the Bellagio fountains is closed Sept 14 to Nov 9, 2026 for F1 construction, so viewing is limited.",
+      "link": ["free/", "See everything free"],
+      "from": ["bellagio-fountains", "bellagio-conservatory", "wynn-lake-of-dreams", "welcome-sign"]
+    },
+    {
+      "q": "How do I get from the airport to the Strip?",
+      "a": "Uber and Lyft pick up inside the parking garage, not at the curb: Level 2 at Terminal 1 and the Valet Level at Terminal 3. Follow the signs in the terminal. Taxis line up outside baggage claim at Terminal 1 (doors 1-4) and on Level Zero near door 52 at Terminal 3.",
+      "link": ["getting-around/", "Getting around"],
+      "from": ["airport-rideshare"]
+    },
+    {
+      "q": "How much is the Las Vegas Monorail?",
+      "a": "One ride is $5.75 as an online eTicket or $6.25 at the station machines. A 1-day pass is $13.95 online or $15.50 at machines. It runs along the east side of the Strip from SAHARA to MGM Grand, with 7 stations.",
+      "link": ["getting-around/", "Getting around"],
+      "from": ["las-vegas-monorail"]
+    },
+    {
+      "q": "How much is the Deuce bus?",
+      "a": "A single ride is $4. Passes are $6 for 2 hours, $8 for 24 hours and $20 for 3 days. Buy them in the rideRTC app or at the ticket machines along the Strip.",
+      "link": ["getting-around/", "Getting around"],
+      "from": ["deuce-bus"]
+    },
+    {
+      "q": "What's the dress code at Vegas clubs?",
+      "a": "Each club sets its own, and we haven't confirmed current dress codes yet, so check the club's page before you go. What we have confirmed is when they're open: TAO runs Thursday to Sunday from 10:30pm, JEWEL on Fridays and Saturdays, and Hakkasan Wednesday to Saturday.",
+      "link": ["nightlife/", "See nightlife"],
+      "from": ["tao-nightclub", "jewel", "hakkasan"]
+    },
+    {
+      "q": "When does pool season end?",
+      "a": "Most dayclubs wrap up in mid to late October. In 2026, Ayu lists events through Oct 17 and LIV Beach through Oct 18. Marquee Dayclub's heated Dome comes back in October, so it keeps going after the outdoor season.",
+      "link": ["pools/", "See pools"],
+      "from": ["ayu-dayclub", "liv-beach", "marquee-dayclub"]
+    },
+    {
+      "q": "Is cannabis legal for tourists?",
+      "a": "Adults 21 and over can buy at a licensed dispensary with a government photo ID, and out-of-state IDs and passports are accepted. Public use isn't allowed, most hotels and casinos ban it, and you can't take it out of Nevada or on a plane.",
+      "link": ["21-plus/", "Read the 21+ guide"],
+      "from": ["planet-13"]
+    },
+    {
+      "q": "What's closed in 2026?",
+      "a": "David Copperfield's residency at MGM Grand ended Apr 30, Le Cirque at Bellagio closed Aug 23, and Mad Apple at New York-New York played its final show Sept 5. XS at Wynn is closed for renovation and reopens Nov 5, 2026.",
+      "link": ["shows/", "See shows on now"],
+      "from": ["david-copperfield", "le-cirque", "mad-apple-cirque", "xs"]
+    }
+  ]
+}
