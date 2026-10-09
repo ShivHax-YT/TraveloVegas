@@ -10,8 +10,8 @@ while true; do
   sha=$(git rev-parse --short main 2>/dev/null)
   if [ -n "$sha" ] && [ "$sha" != "$last" ] && [ ! -f "reviews/$sha.md" ]; then
     echo "Reviewing $sha ..."
-    codex exec --sandbox read-only "$(cat prompts-archive/codex-review.md) Focus on what changed in commit $sha (git show $sha)." > "reviews/$sha.md" 2>&1 \
-      && cp "reviews/$sha.md" reviews/LATEST.md && echo "Saved reviews/$sha.md"
+    codex exec ${CODEX_MODEL:+-m "$CODEX_MODEL"} --sandbox read-only "$(cat prompts-archive/codex-review.md) Focus on what changed in commit $sha (git show $sha)." > "reviews/$sha.md" 2>&1 \
+      ; if grep -q "^ERROR:" "reviews/$sha.md"; then echo "Codex failed on $sha (see file); will retry next commit"; mv "reviews/$sha.md" "reviews/failed-$sha.md"; else cp "reviews/$sha.md" reviews/LATEST.md && echo "Saved reviews/$sha.md"; fi
     last="$sha"
   fi
   sleep 60
