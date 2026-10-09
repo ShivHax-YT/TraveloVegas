@@ -324,6 +324,8 @@ em { font-style: italic; font-weight: 300; }
 .card-venue,
 .card-price { color: var(--muted); font-size: var(--small); }
 .card-alert { margin-top: 6px; padding-left: 10px; border-left: 3px solid var(--warn); font-size: var(--small); font-weight: 500; }
+.card-when { color: var(--ink); font-size: var(--small); font-weight: 600; }
+.card-ages { color: var(--muted); font-size: var(--small); }
 .card-checked { margin-top: auto; padding-top: 12px; color: var(--muted); font-size: var(--eyebrow); letter-spacing: .02em; }
 .card-book { align-self: start; margin-top: 14px; }
 .disclosure { margin-top: 16px; color: var(--muted); font-size: var(--small); }
@@ -434,7 +436,15 @@ em { font-style: italic; font-weight: 300; }
 .cat-answer { max-width: 56ch; color: color-mix(in srgb, var(--paper) 86%, transparent); font-size: var(--body); }
 .crumbs ol { display: flex; flex-wrap: wrap; gap: 8px; color: color-mix(in srgb, var(--paper) 72%, transparent); font-size: var(--small); }
 .crumbs li + li::before { content: "/"; margin-right: 8px; }
-.cat-list { padding-block: clamp(40px, 6vw, 72px) var(--section); }
+.cat-body { padding-block: clamp(40px, 6vw, 72px) var(--section); }
+.list-title { margin-bottom: 16px; font-size: var(--h-2); }
+.cat-empty { max-width: var(--measure); margin-top: 20px; }
+.jump ul { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 8px; font-size: var(--small); }
+.jump a { text-underline-offset: .25em; }
+.cuisine { margin-top: 48px; scroll-margin-top: calc(var(--header-h) + 16px); }
+.cuisine-title { font-size: var(--h-3); font-weight: 400; }
+.cuisine-count { color: var(--muted); font: 500 var(--small)/1 var(--sans); }
+.show-all { margin-top: 18px; }
 .filter-chips { margin-bottom: 20px; }
 .cat-count { color: var(--muted); font-size: var(--small); }
 .cat-grid {
@@ -450,21 +460,61 @@ em { font-style: italic; font-weight: 300; }
 .rules-title { margin-bottom: 14px; font-size: var(--h-2); }
 .rules ul { display: grid; gap: 8px; max-width: var(--measure); padding-left: 1.2em; list-style: disc; }
 .rules-source { margin-top: 14px; font-size: var(--small); }
+/* In the page flow by default (no-JS visitors get the gate + rules); .is-modal is the JS overlay. */
 .gate {
   --focus: var(--gold);
-  position: fixed;
-  inset: 0;
-  z-index: 60;
   display: grid;
   place-items: center;
-  padding: var(--gutter);
+  padding: calc(var(--header-h) + 48px) var(--gutter) 56px;
   background: var(--night);
   color: var(--paper);
 }
+.gate.is-modal { position: fixed; inset: 0; z-index: 60; padding: var(--gutter); }
+.gate-noscript { color: var(--gold); }
 .gate-box { display: grid; gap: 16px; max-width: 520px; }
 .gate .eyebrow { color: var(--gold); }
 .gate-title { font-size: var(--h-1); }
 .gate-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+
+/* ---------- 9. Strip map ---------- */
+.map { padding-block: var(--section); scroll-margin-top: var(--header-h); }
+.map-inner {
+  display: grid;
+  gap: 40px;
+  @media (min-width: 900px) { grid-template-columns: 5fr 6fr; gap: 64px; align-items: start; }
+}
+.map-side {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  @media (min-width: 900px) { position: sticky; top: calc(var(--header-h) + 24px); }
+}
+.map-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: var(--small); }
+.map-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.key { display: inline-block; }
+.key-pin { width: 12px; height: 12px; border-radius: var(--r-pill); background: var(--neon); }
+.key-rail { width: 22px; border-top: 2px dashed var(--sky); }
+.map-hint { color: var(--muted); font-size: var(--small); }
+.map-cards { display: grid; gap: 12px; }
+.map-cards .card { border: 1px solid var(--line); }
+.map-frame { justify-self: center; width: 100%; max-width: 520px; }
+.strip-svg { display: block; width: 100%; height: auto; overflow: visible; font: 500 14px var(--sans); }
+.strip-line { stroke: var(--ink); stroke-width: 3; fill: none; }
+.strip-arrow { stroke: var(--ink); stroke-width: 2; fill: none; }
+.strip-north { fill: var(--muted); font-size: 13px; }
+.rail-line { stroke: var(--sky); stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; }
+.rail-title { fill: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.station circle { fill: var(--paper); stroke: var(--sky); stroke-width: 2.5; }
+.station text { fill: var(--muted); font-size: 12px; }
+.spot circle { fill: var(--ink); }
+.spot text { fill: var(--ink); }
+.spot-c circle { fill: var(--paper); stroke: var(--ink); stroke-width: 2.5; }
+.pin { cursor: pointer; outline: none; }
+.pin-dot { fill: var(--neon); stroke: var(--paper); stroke-width: 2.5; }
+.pin-halo { fill: color-mix(in srgb, var(--neon) 22%, transparent); transform-box: fill-box; transform-origin: center; transition: transform var(--t-ui) var(--ease); }
+.pin:hover .pin-halo,
+.pin.is-active .pin-halo { transform: scale(1.35); }
+.pin:focus-visible .pin-dot { stroke: var(--ink); stroke-width: 3; }
 
 /* ---------- Placeholder blocks (built in later rounds) ---------- */
 .upcoming { padding-block: calc(var(--section) * .6); }

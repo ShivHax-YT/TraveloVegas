@@ -1,5 +1,5 @@
 // TraveloVegas: header states, mobile menu + bottom bar, hero parallax, rail controls, "Plan my night",
-// category filters, the 21+ gate, Lenis.
+// category filters and "Show all", the Strip map, the 21+ gate, Lenis.
 // The hero reveal is CSS (site.css) so copy is visible even if this file never runs.
 (() => {
   const root = document.documentElement;
@@ -39,7 +39,6 @@
     });
     const heroBottom = top ? top.getBoundingClientRect().bottom : 0;
 
-    header.classList.toggle("solid", y > vh * 0.6);
     header.classList.toggle("over-dark", overDark);
     bar?.classList.toggle("show", heroBottom < vh * 0.35);
 
@@ -56,6 +55,13 @@
   addEventListener("scroll", onScroll, { passive: true });
   addEventListener("resize", onScroll, { passive: true });
   update();
+
+  // Header turns solid once the hero (home or category) has scrolled out from under it.
+  if (top) {
+    new IntersectionObserver(([e]) => header.classList.toggle("solid", !e.isIntersecting), {
+      rootMargin: `-${header.offsetHeight}px 0px 0px 0px`,
+    }).observe(top);
+  } else header.classList.add("solid");
 
   // ----- Mobile menu sheet -----
   const menuBtn = header.querySelector(".menu-btn");
@@ -200,23 +206,82 @@
     });
   });
 
-  // ----- 21+ gate: shown until the visitor confirms; the answer is remembered when storage allows -----
+  // ----- "Show all" for long /eat/ groups: collapsed here, so without JS every card stays visible -----
+  document.querySelectorAll(".show-all").forEach((btn) => {
+    const more = document.getElementById(btn.getAttribute("aria-controls")).querySelectorAll("[data-more]");
+    const label = btn.textContent;
+    const set = (open) => {
+      more.forEach((c) => { c.hidden = !open; });
+      btn.setAttribute("aria-expanded", String(open));
+      btn.textContent = open ? "Show fewer" : label;
+    };
+    btn.addEventListener("click", () => set(btn.getAttribute("aria-expanded") !== "true"));
+    btn.hidden = false;
+    set(false);
+  });
+
+  // ----- Strip map (PATTERNS #9): a pin shows its card; without JS all pin cards stay listed -----
+  const map = document.querySelector(".map");
+  if (map) {
+    const pins = [...map.querySelectorAll(".pin")];
+    const cards = [...map.querySelectorAll(".map-cards > .card")];
+    const hint = map.querySelector(".map-hint");
+    const show = (id) => {
+      cards.forEach((c) => { c.hidden = c.dataset.pin !== id; });
+      pins.forEach((p) => {
+        p.classList.toggle("is-active", p.dataset.pin === id);
+        p.setAttribute("aria-pressed", String(p.dataset.pin === id));
+      });
+      hint.hidden = Boolean(id);
+    };
+    pins.forEach((p) => {
+      p.addEventListener("click", () => show(p.dataset.pin));
+      p.addEventListener("focus", () => show(p.dataset.pin));
+      p.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(p.dataset.pin); }
+      });
+    });
+    show(null);
+  }
+
+  // ----- 21+ gate. The HTML ships with the gate showing and the listings hidden, so no-JS visitors
+  // only see the gate and the cannabis rules. Here it becomes a modal with a focus trap until confirmed. -----
   const gate = document.querySelector("[data-gate]");
   if (gate) {
     const KEY = "tv-21";
+    const list = document.querySelector("[data-gated]");
+    const blocked = [document.querySelector(".skip"), header, document.querySelector("main"), document.querySelector(".site-footer"), bar].filter(Boolean);
+    const reveal = () => {
+      gate.remove();
+      if (list) list.hidden = false;
+    };
     let ok = false;
     try { ok = localStorage.getItem(KEY) === "yes"; } catch {}
-    const blocked = [document.querySelector(".site-header"), document.querySelector("main"), document.querySelector(".site-footer"), bar].filter(Boolean);
-    const lock = (on) => {
-      gate.hidden = !on;
-      root.classList.toggle("is-locked", on);
-      blocked.forEach((el) => { el.inert = on; });
-      if (on) { lenis?.stop(); gate.querySelector("[data-gate-yes]").focus(); } else lenis?.start();
-    };
-    gate.querySelector("[data-gate-yes]").addEventListener("click", () => {
-      try { localStorage.setItem(KEY, "yes"); } catch {}
-      lock(false);
-    });
-    lock(!ok);
+    if (ok) reveal();
+    else {
+      gate.classList.add("is-modal");
+      gate.setAttribute("role", "dialog");
+      gate.setAttribute("aria-modal", "true");
+      root.classList.add("is-locked");
+      blocked.forEach((el) => { el.inert = true; });
+      lenis?.stop();
+      const focusables = () => [...gate.querySelectorAll("a[href], button:not([disabled])")];
+      gate.addEventListener("keydown", (e) => {
+        if (e.key !== "Tab") return;
+        const f = focusables();
+        const [first, last] = [f[0], f.at(-1)];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
+      gate.querySelector("[data-gate-yes]").addEventListener("click", () => {
+        try { localStorage.setItem(KEY, "yes"); } catch {}
+        reveal();
+        root.classList.remove("is-locked");
+        blocked.forEach((el) => { el.inert = false; });
+        lenis?.start();
+        document.getElementById("cat-title")?.focus();
+      });
+      focusables()[0].focus();
+    }
   }
 })();

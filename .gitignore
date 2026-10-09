@@ -2,3 +2,8 @@ node_modules/
 dist/
 screens/
 .DS_Store
+
+# local-only media sources and review output
+design/media-production/references/
+reviews/
+.claude/settings.local.json
