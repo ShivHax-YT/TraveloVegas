@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && [ -f package.json ] && npm run -s build >/dev/null 2>&1 && node scripts/shots.mjs || true",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

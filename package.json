@@ -1,0 +1,25 @@
+{
+  "name": "travelovegas",
+  "version": "1.0.0",
+  "description": "Travelling to Las Vegas, you've come to the right place, here's everything you need to know about Vegas!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShivHax-YT/TraveloVegas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ShivHax-YT/TraveloVegas/issues"
+  },
+  "homepage": "https://github.com/ShivHax-YT/TraveloVegas#readme",
+  "devDependencies": {
+    "playwright": "^1.64.0",
+    "serve": "^14.2.6"
+  }
+}
