@@ -1,0 +1,39 @@
+{
+  "_about": "Schematic Strip map (PATTERNS #9), north to south, not to scale. side: w/e of Las Vegas Blvd, c = on the line. match = regexes tested against a featured listing's venue to place its pin (a listing's own \"map\": \"<resort id>\" wins). Monorail stations from the las-vegas-monorail listing; at = the resort they sit beside. Closed resorts (The Mirage, Tropicana) are left out.",
+  "downtown": { "id": "downtown", "name": "Downtown and Fremont Street", "match": ["^Downtown", "Fremont"] },
+  "resorts": [
+    { "id": "strat", "name": "The STRAT", "side": "c", "match": ["STRAT"] },
+    { "id": "sahara", "name": "SAHARA", "side": "e", "match": ["^SAHARA"] },
+    { "id": "fontainebleau", "name": "Fontainebleau", "side": "e", "match": ["Fontainebleau"] },
+    { "id": "resorts-world", "name": "Resorts World", "side": "w", "match": ["Resorts World"] },
+    { "id": "wynn", "name": "Wynn and Encore", "side": "e", "match": ["^Wynn", "^Encore"] },
+    { "id": "treasure-island", "name": "Treasure Island", "side": "w", "match": ["Treasure Island"] },
+    { "id": "venetian", "name": "The Venetian and Palazzo", "side": "e", "match": ["Venetian", "Palazzo"] },
+    { "id": "sphere", "name": "Sphere", "side": "e", "match": ["^Sphere"] },
+    { "id": "linq", "name": "The LINQ and Harrah's", "side": "e", "match": ["LINQ", "Harrah"] },
+    { "id": "caesars", "name": "Caesars Palace", "side": "w", "match": ["Caesars"] },
+    { "id": "flamingo", "name": "Flamingo", "side": "e", "match": ["^Flamingo"] },
+    { "id": "horseshoe", "name": "Horseshoe", "side": "e", "match": ["Horseshoe"] },
+    { "id": "paris", "name": "Paris Las Vegas", "side": "e", "match": ["^Paris"] },
+    { "id": "bellagio", "name": "Bellagio", "side": "w", "match": ["^Bellagio"] },
+    { "id": "cosmopolitan", "name": "The Cosmopolitan", "side": "w", "match": ["Cosmopolitan"] },
+    { "id": "aria", "name": "ARIA", "side": "w", "match": ["^ARIA"] },
+    { "id": "planet-hollywood", "name": "Planet Hollywood", "side": "e", "match": ["Planet Hollywood", "Miracle Mile"] },
+    { "id": "park-mgm", "name": "Park MGM", "side": "w", "match": ["Park MGM"] },
+    { "id": "mgm-grand", "name": "MGM Grand", "side": "e", "match": ["^MGM Grand"] },
+    { "id": "nyny", "name": "New York-New York", "side": "w", "match": ["New York-New York"] },
+    { "id": "excalibur", "name": "Excalibur", "side": "w", "match": ["Excalibur"] },
+    { "id": "luxor", "name": "Luxor", "side": "w", "match": ["^Luxor"] },
+    { "id": "mandalay-bay", "name": "Mandalay Bay", "side": "w", "match": ["Mandalay Bay"] },
+    { "id": "welcome-sign", "name": "Welcome to Fabulous Las Vegas sign", "side": "c", "match": ["South Strip"] }
+  ],
+  "monorail": [
+    { "name": "SAHARA", "at": "sahara" },
+    { "name": "Westgate", "at": "fontainebleau" },
+    { "name": "LVCC", "at": "wynn" },
+    { "name": "Harrah's/The LINQ", "at": "linq" },
+    { "name": "Flamingo/Caesars Palace", "at": "flamingo" },
+    { "name": "Horseshoe/Paris", "at": "horseshoe" },
+    { "name": "MGM Grand", "at": "mgm-grand" }
+  ]
+}

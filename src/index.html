@@ -129,13 +129,28 @@
           <p>Sunset drinks, dinner, a show, the fountains and a late bite, hour by hour.</p>
         </div>
       </section>
-      <section class="block" id="map" aria-labelledby="map-title">
-        <div class="wrap block-inner">
-          <h2 class="block-title" id="map-title">The Strip, mapped</h2>
-          <p>Where the resorts and monorail stops sit, and how far apart they really are.</p>
-        </div>
-      </section>
     </div>
+
+    <section class="map" id="map" aria-labelledby="map-title">
+      <div class="wrap map-inner">
+        <div class="map-side">
+          <h2 class="section-title" id="map-title">The Strip, mapped</h2>
+          <p class="lede">Where the resorts and Monorail stops sit, north to south. Tap a pink pin for one of our picks.</p>
+          <ul class="map-legend" role="list">
+            <li><span class="key key-pin" aria-hidden="true"></span>Our picks</li>
+            <li><span class="key key-rail" aria-hidden="true"></span>Monorail, east side</li>
+            <li>Not to scale</li>
+          </ul>
+          <p class="map-hint" hidden>Tap or tab to a pin to see what's there.</p>
+          <ul class="map-cards" id="map-cards" role="list" aria-live="polite">
+      {{mapCards}}
+          </ul>
+        </div>
+        <div class="map-frame">
+      {{mapSvg}}
+        </div>
+      </div>
+    </section>
 
     <section class="faq" id="faq" aria-labelledby="faq-title">
       <div class="wrap faq-inner">

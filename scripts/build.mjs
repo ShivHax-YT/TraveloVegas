@@ -37,6 +37,15 @@ const shortDate = (iso, withYear = true) => {
   return `${MONTHS[m - 1]} ${d}${!withYear || y === now.getFullYear() ? "" : `, ${y}`}`;
 };
 const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+// An event is upcoming while its last day (event_end, else event_date) hasn't passed.
+const eventEnd = (l) => (isDate(l.event_end) ? l.event_end : l.event_date);
+const upcomingEvent = (l) => isDate(l.event_date) && daysUntil(eventEnd(l)) >= 0;
+// "Oct 17" or "Nov 19 to 22" / "Oct 30 to Nov 2"
+const eventDates = (l) => {
+  if (!isDate(l.event_end) || l.event_end === l.event_date) return shortDate(l.event_date);
+  const [a, b] = [parse(l.event_date), parse(l.event_end)];
+  return `${shortDate(l.event_date)} to ${a.m === b.m && a.y === b.y ? b.d : shortDate(l.event_end)}`;
+};
 // Days until the listing's next dated moment in the next 30 days (an event running or a reopening), else null.
 const nextDated = (l) => {
   const hits = [];
@@ -80,16 +89,20 @@ const cardImage = (l, root) => {
   return `<div class="card-media"><img src="${esc(src)}" alt="" loading="lazy" decoding="async">${note}</div>`;
 };
 
-const card = (l, { root = "", attrs = "" } = {}) => {
+const ages = (l) => (typeof l.min_age !== "number" ? "" : l.min_age > 0 ? `Ages ${l.min_age}+` : "All ages");
+
+const card = (l, { root = "", attrs = "", level = 3 } = {}) => {
   const book = bookingUrl(l);
   return `<li class="card"${attrs}>
         ${cardImage(l, root)}<div class="card-body">
           <p class="card-top"><span class="card-cat">${esc(label(l))}</span>${pill(l)}</p>
-          <h3 class="card-name">${esc(l.name)}</h3>
+          <h${level} class="card-name">${esc(l.name)}</h${level}>
+          ${upcomingEvent(l) ? `<p class="card-when"><time datetime="${esc(l.event_date)}">${eventDates(l)}</time></p>` : ""}
           ${l.venue ? `<p class="card-venue">${esc(l.venue)}</p>` : ""}
           ${l.alert ? `<p class="card-alert">${esc(l.alert)}</p>` : ""}
           ${l.price != null ? `<p class="card-price">${esc(l.price)}</p>` : ""}
-          <p class="card-checked">Verified <time datetime="${esc(l.last_checked)}">${shortDate(l.last_checked)}</time></p>
+          ${ages(l) ? `<p class="card-ages">${ages(l)}</p>` : ""}
+          <p class="card-checked">Last checked <time datetime="${esc(l.last_checked)}">${shortDate(l.last_checked)}</time></p>
           ${book ? `<a class="btn btn-neon card-book" href="${esc(book)}" target="_blank" rel="sponsored noopener">Check tickets</a>` : ""}
         </div>
       </li>`;
@@ -121,6 +134,8 @@ const onThisWeek = (() => {
 
 // ---------- Home: "Plan my night" pool (PATTERNS #8) ----------
 const PLAN_PER_CATEGORY = 8;
+const PLAN_RESTAURANTS = 24;
+const SPREAD_TAGS = ["date-night", "family", "budget", "splurge", "vegetarian"];
 const VIBES = {
   attractions: ["thrills"], tours: ["thrills"], shows: ["shows"], restaurants: ["food"],
   nightclubs: ["nightlife"], "pool-party": ["nightlife"], free: [],
@@ -133,8 +148,23 @@ const budgets = (l) => [
 ];
 // "free" only for free === true (listings here are all sourced); "family" only from the tag.
 const vibes = (l) => [...VIBES[l.category], ...(l.free === true ? ["free"] : []), ...(has(l, "family") ? ["family"] : [])];
-const planPool = [...Map.groupBy(pickable.filter((l) => ["open", "seasonal"].includes(l.status) && l.category in VIBES), (l) => l.category).values()]
-  .flatMap((ls) => ls.filter((l) => vibes(l).length).slice(0, PLAN_PER_CATEGORY));
+// Restaurants: up to 24, taking turns across the tags so every Who/Budget pick has options. Others: first 8.
+const spread = (ls, max) => {
+  const out = [];
+  for (let added = true; added && out.length < max;) {
+    added = false;
+    for (const t of SPREAD_TAGS) {
+      const next = ls.find((l) => has(l, t) && !out.includes(l));
+      if (next && out.length < max) { out.push(next); added = true; }
+    }
+  }
+  return out;
+};
+const planPool = [...Map.groupBy(pickable.filter((l) => ["open", "seasonal"].includes(l.status) && l.category in VIBES), (l) => l.category)]
+  .flatMap(([c, ls]) => {
+    const ok = ls.filter((l) => vibes(l).length);
+    return c === "restaurants" ? spread(ok, PLAN_RESTAURANTS) : ok.slice(0, PLAN_PER_CATEGORY);
+  });
 const planCard = (l) =>
   card(l, { attrs: ` data-vibe="${vibes(l).join(" ")}" data-budget="${budgets(l).join(" ")}" data-tags="${(l.tags ?? []).join(" ")}" hidden` });
 
@@ -167,7 +197,9 @@ const itemList = (name, ls) => jsonLd({
     "@type": "ListItem",
     position: i + 1,
     // Address only when the listing has its own sourced "address" (venue names aren't addresses).
-    item: { "@type": "Place", name: l.name, ...(l.address && sourced(l) && { address: l.address }) },
+    item: upcomingEvent(l)
+      ? { "@type": "Event", name: l.name, startDate: l.event_date, endDate: eventEnd(l), location: { "@type": "Place", name: l.venue ?? "Las Vegas", ...(l.address && { address: l.address }) } }
+      : { "@type": "Place", name: l.name, ...(l.address && sourced(l) && { address: l.address }) },
   })),
 });
 const breadcrumbs = (page) => jsonLd({
@@ -185,6 +217,49 @@ const faqLd = jsonLd({
     acceptedAnswer: { "@type": "Answer", text: `${f.a} <a href="${SITE}${f.link[0]}">${f.link[1]}</a>` },
   })),
 });
+
+// ---------- Strip map (PATTERNS #9): hand-built SVG, pins for featured listings ----------
+const strip = readJson("src/strip.json");
+const stripMap = (() => {
+  const W = 460, ROW = 32, TOP = 84;
+  const X = { line: 190, wDot: 176, wLabel: 162, eDot: 204, eLabel: 218, rail: 372, railLabel: 384 };
+  const SHORT = { "Wynn and Encore": "Wynn / Encore", "The Venetian and Palazzo": "Venetian / Palazzo", "The LINQ and Harrah's": "LINQ / Harrah's", "Welcome to Fabulous Las Vegas sign": "Welcome sign" };
+  const y = (i) => TOP + i * ROW;
+  const H = y(strip.resorts.length - 1) + 56;
+  const spots = [strip.downtown, ...strip.resorts];
+  // A listing's own "map" (resort id) wins over matching its venue.
+  const spotFor = (l) => spots.find((r) => (l.map ? r.id === l.map : r.match.some((m) => new RegExp(m).test(l.venue ?? ""))));
+  const pins = Map.groupBy(pickable.filter((l) => l.featured === true && spotFor(l)), (l) => spotFor(l).id);
+  const pin = (id, cx, cy, name) => {
+    const ls = pins.get(id);
+    if (!ls) return "";
+    return `<g class="pin" data-pin="${id}" tabindex="0" role="button" aria-controls="map-cards" aria-label="${esc(`${name}: ${ls.map((l) => l.name).join(", ")}`)}">
+          <circle class="pin-halo" cx="${cx}" cy="${cy}" r="15"/><circle class="pin-dot" cx="${cx}" cy="${cy}" r="8"/>
+        </g>`;
+  };
+  const rows = strip.resorts.map((r, i) => {
+    const cy = y(i);
+    const [dot, lx, anchor] = r.side === "w" ? [X.wDot, X.wLabel, "end"] : r.side === "e" ? [X.eDot, X.eLabel, "start"] : [X.line, X.eLabel, "start"];
+    return `<g class="spot${r.side === "c" ? " spot-c" : ""}"><circle cx="${dot}" cy="${cy}" r="4.5"/><text x="${lx}" y="${cy + 5}" text-anchor="${anchor}">${esc(SHORT[r.name] ?? r.name)}</text></g>
+        ${pin(r.id, dot, cy, r.name)}`;
+  });
+  const at = Object.fromEntries(strip.resorts.map((r, i) => [r.id, y(i)]));
+  const stations = strip.monorail.map((s) => `<g class="station"><circle cx="${X.rail}" cy="${at[s.at]}" r="5"/><text x="${X.railLabel}" y="${at[s.at] + 4}">${esc(s.name.split("/")[0])}</text></g>`);
+  const railTop = at[strip.monorail[0].at], railBottom = at[strip.monorail.at(-1).at];
+  const svg = `<svg class="strip-svg" viewBox="0 0 ${W} ${H}" role="group" aria-labelledby="map-title map-desc">
+        <desc id="map-desc">Schematic map of the Las Vegas Strip from The STRAT in the north to the Welcome sign in the south, with resorts on each side of Las Vegas Boulevard, the 7 Monorail stations on the east side and pins for our featured picks. Not to scale.</desc>
+        <path class="strip-line" d="M${X.line} 30 V${H - 24}"/>
+        <path class="strip-arrow" d="M${X.line - 7} 40 L${X.line} 28 L${X.line + 7} 40"/>
+        <text class="strip-north" x="${X.eLabel}" y="38">Downtown and Fremont St</text>
+        ${pin("downtown", X.line, 30, strip.downtown.name)}
+        <path class="rail-line" d="M${X.rail} ${railTop} V${railBottom}"/>
+        <text class="rail-title" x="${X.rail}" y="${railTop - 18}" text-anchor="middle">Monorail</text>
+        ${stations.join("\n        ")}
+        ${rows.join("\n        ")}
+      </svg>`;
+  const cards = [...pins].flatMap(([id, ls]) => ls.map((l) => card(l, { attrs: ` data-pin="${id}"` })));
+  return { svg, cards: cards.join("\n      "), count: [...pins.values()].flat().length };
+})();
 
 // ---------- Media ----------
 const exists = (file) => existsSync(join(MEDIA, file));
@@ -226,7 +301,10 @@ const PAGE_FILTERS = {
   free: (l) => l.free === true && !l.adult,
   // Attractions have no page of their own, so they live with tours (plus free-category spots not confirmed free).
   tours: (l) => ["tours", "attractions"].includes(l.category) || (l.category === "free" && l.free !== true),
+  // Events come from event_date/event_end on any non-21+ listing, soonest first.
+  events: (l) => upcomingEvent(l) && !l.adult,
 };
+const PAGE_SORT = { events: (a, b) => parse(a.event_date).t - parse(b.event_date).t };
 const filterKeys = (page, l) =>
   page.slug === "eat"
     ? [...new Set([...[].concat(l.cuisine ?? []).map((c) => (VEG.includes(c) ? "vegetarian" : c)), ...(has(l, "vegetarian") ? ["vegetarian"] : [])])]
@@ -241,12 +319,39 @@ const filtersFor = (page, ls) => {
   return options.filter(([v]) => count(v) >= 2);
 };
 
+// /eat/: one group per cuisine (Indian, Vegetarian, then by size). Each card appears once, in its first match.
+// Groups show 6 cards; js/site.js collapses the rest behind "Show all" (without JS everything stays visible).
+const EAT_SHOWN = 6;
+const eatGroups = (page, ls, root) => {
+  const order = filtersFor(page, ls).map(([v, t]) => [v, t]);
+  const placed = new Set();
+  const groups = [...order, ["other", "More places"]].map(([v, t]) => {
+    const members = ls.filter((l) => !placed.has(l) && (v === "other" || filterKeys(page, l).includes(v)));
+    members.forEach((l) => placed.add(l));
+    return { v, t, members };
+  }).filter((g) => g.members.length);
+  const jump = `<nav class="jump" aria-label="Cuisines">
+          <ul role="list">${groups.map((g) => `<li><a href="#cuisine-${g.v}">${esc(g.t)}</a></li>`).join("")}</ul>
+        </nav>`;
+  const html = groups.map((g) => `<section class="cuisine" aria-labelledby="cuisine-${g.v}">
+          <h3 class="cuisine-title" id="cuisine-${g.v}">${esc(g.t)} <span class="cuisine-count">${g.members.length}</span></h3>
+          <ul class="cat-grid" id="cuisine-list-${g.v}" role="list">
+      ${g.members.map((l, i) => card(l, { root, level: 4, attrs: i >= EAT_SHOWN ? " data-more" : "" })).join("\n      ")}
+          </ul>
+          ${g.members.length > EAT_SHOWN ? `<button class="btn btn-ghost show-all" type="button" aria-expanded="false" aria-controls="cuisine-list-${g.v}" hidden>Show all ${g.members.length}</button>` : ""}
+        </section>`).join("\n        ");
+  return { jump, html };
+};
+
 const renderPage = (page, root) => {
   const inPage = PAGE_FILTERS[page.slug] ?? ((l) => page.categories.includes(l.category));
-  // Confirmed first, then "Not yet confirmed"; data order within each.
-  const ls = live.filter(inPage).sort((a, b) => confirmed(b) - confirmed(a));
-  const chips = page.slug === "21-plus" ? [] : filtersFor(page, ls);
+  // Confirmed first, then "Not yet confirmed"; data order within each (events: soonest first).
+  const ls = live.filter(inPage).sort(PAGE_SORT[page.slug] ?? ((a, b) => confirmed(b) - confirmed(a)));
+  const grouped = page.slug === "eat" ? eatGroups(page, ls, root) : null;
+  const chips = page.slug === "21-plus" || grouped ? [] : filtersFor(page, ls);
   const n = ls.filter(confirmed).length;
+  const [one, many] = page.noun ?? ["place", "places"];
+  const gated = page.slug === "21-plus";
   const html = render(read("src/templates/category.html"), {
     title: page.title,
     description: page.description.replace("{n}", n),
@@ -261,11 +366,19 @@ const renderPage = (page, root) => {
           <button class="chip" type="button" aria-pressed="true" value="">All</button>
           ${chips.map(([v, t]) => `<button class="chip" type="button" aria-pressed="false" value="${esc(v)}">${esc(t)}</button>`).join("\n          ")}
         </div>`,
-    count: `${ls.length} ${ls.length === 1 ? "place" : "places"}`,
+    listTitle: esc(page.list.replace("{n}", ls.length)),
+    count: `${ls.length} ${ls.length === 1 ? one : many}`,
     disclosure: disclosure(ls, root),
-    cards: ls.map((l) => card(l, { root, attrs: ` data-filter="${esc(filterKeys(page, l).join(" "))}"` })).join("\n      "),
-    extra: page.slug === "21-plus" ? render(read("src/partials/21-plus-extra.html"), {}, root) : "",
-    gate: page.slug === "21-plus" ? render(read("src/partials/gate.html"), {}, root) : "",
+    jump: grouped?.jump ?? "",
+    listing: ls.length === 0
+      ? `<p class="cat-empty">${esc(page.empty ?? "Nothing to show here yet. Check back soon.")}</p>`
+      : grouped?.html ?? `<ul class="cat-grid" role="list">
+      ${ls.map((l) => card(l, { root, attrs: ` data-filter="${esc(filterKeys(page, l).join(" "))}"` })).join("\n      ")}
+        </ul>`,
+    // 21+: listings stay hidden in the HTML until the gate is passed (js/site.js reveals them).
+    listAttrs: gated ? " hidden data-gated" : "",
+    extra: gated ? render(read("src/partials/21-plus-extra.html"), {}, root) : "",
+    gate: gated ? render(read("src/partials/gate.html"), {}, root) : "",
   }, root);
   return { html, count: ls.length };
 };
@@ -291,6 +404,8 @@ write("index.html", render(read("src/index.html"), {
   weekDisclosure: disclosure(onThisWeek, ""),
   planPool: planPool.map(planCard).join("\n      "),
   faq: faqHtml,
+  mapSvg: stripMap.svg,
+  mapCards: stripMap.cards,
 }, ""));
 
 const built = [];

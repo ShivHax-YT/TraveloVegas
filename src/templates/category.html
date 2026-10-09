@@ -4,8 +4,8 @@
   {{head}}
 </head>
 <body>
-  {{gate}}
   {{header}}
+  {{gate}}
 
   <main id="main">
     <section class="cat-hero" aria-labelledby="cat-title">
@@ -17,22 +17,26 @@
             <li aria-current="page">{{crumb}}</li>
           </ol>
         </nav>
-        <h1 class="cat-title" id="cat-title">{{h1}}</h1>
+        <h1 class="cat-title" id="cat-title" tabindex="-1">{{h1}}</h1>
         <p class="cat-answer">{{answer}}</p>
       </div>
     </section>
 
-    <section class="cat-list" aria-labelledby="cat-title">
+    <div class="cat-body">
       <div class="wrap">
         {{extra}}
-        {{chips}}
-        <p class="cat-count" role="status" aria-live="polite">{{count}}</p>
-        {{disclosure}}
-        <ul class="cat-grid" role="list">
-      {{cards}}
-        </ul>
       </div>
-    </section>
+      <section class="cat-list" aria-labelledby="list-title"{{listAttrs}}>
+        <div class="wrap">
+          <h2 class="list-title" id="list-title">{{listTitle}}</h2>
+          {{jump}}
+          {{chips}}
+          <p class="cat-count" role="status" aria-live="polite">{{count}}</p>
+          {{disclosure}}
+          {{listing}}
+        </div>
+      </section>
+    </div>
   </main>
 
   {{footer}}
