@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Las Vegas Guide: Shows, Free Things and Nights Out | TraveloVegas</title>
+  <meta name="description" content="Shows, free spectacles, food and nights out in Las Vegas, checked by locals and updated every week.">
+  <link rel="canonical" href="https://travelovegas.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TraveloVegas">
+  <meta property="og:title" content="The Strip, without the guesswork | TraveloVegas">
+  <meta property="og:description" content="Shows, free spectacles, food and nights out in Las Vegas, checked by locals and updated every week.">
+  <meta property="og:url" content="https://travelovegas.com/">
+  <meta name="theme-color" content="#0e0b14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300&family=Inter+Tight:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/site.css">
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
+  <script src="js/site.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header" data-header>
+    <div class="header-bar">
+      <a class="wordmark" href="./">Travelo<em>Vegas</em></a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-menu">
+        <span class="menu-icon" aria-hidden="true"></span>
+        <span>Menu</span>
+      </button>
+      <div class="nav-panel" id="site-menu">
+        <nav class="nav" aria-label="Main">
+          <ul role="list">
+            <li><a href="shows/">Shows</a></li>
+            <li><a href="free/">Free</a></li>
+            <li><a href="eat/">Eat</a></li>
+            <li><a href="nightlife/">Nightlife</a></li>
+            <li><a href="tours/">Tours</a></li>
+          </ul>
+        </nav>
+        <a class="btn btn-neon" href="#plan">Plan my night</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-media ph" aria-hidden="true"></div>
+      <div class="hero-copy wrap">
+        <p class="eyebrow hero-line" style="--d: .15s">Las Vegas, verified weekly</p>
+        <h1 class="hero-title hero-line" id="hero-title" style="--d: .35s">The Strip, <em>without the guesswork.</em></h1>
+        <p class="hero-lede hero-line" style="--d: .6s">Shows, free spectacles, food and nights out, checked by locals and updated every week.</p>
+        <div class="hero-actions hero-line" style="--d: .8s">
+          <a class="btn btn-neon btn-lg" href="#plan">Plan my night</a>
+          <a class="btn btn-ghost btn-lg" href="free/">What's free today</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="bands" aria-labelledby="bands-title">
+      <div class="wrap">
+        <h2 class="section-title" id="bands-title">What are you in the mood for?</h2>
+        <ul class="band-grid" role="list">
+          <li><a class="tile" href="shows/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Shows</span></a></li>
+          <li><a class="tile" href="free/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Free</span></a></li>
+          <li><a class="tile" href="eat/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Eat</span></a></li>
+          <li><a class="tile" href="nightlife/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Nightlife</span></a></li>
+          <li><a class="tile" href="pools/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Pools</span></a></li>
+          <li><a class="tile" href="tours/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Tours</span></a></li>
+          <li><a class="tile" href="getting-around/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">Getting around</span></a></li>
+          <li><a class="tile" href="21-plus/"><span class="tile-media ph" aria-hidden="true"></span><span class="tile-label">21+</span></a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="week" aria-labelledby="week-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title" id="week-title">On this week</h2>
+            <p class="lede">What's on, what's seasonal and what's closed for now.</p>
+          </div>
+          <div class="rail-nav" hidden>
+            <button class="rail-btn" type="button" data-dir="-1" aria-controls="week-rail" aria-label="Previous">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+            <button class="rail-btn" type="button" data-dir="1" aria-controls="week-rail" aria-label="Next">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
+        </div>
+        <ul class="rail" id="week-rail" role="list" tabindex="0" aria-labelledby="week-title">
+      {{onThisWeek}}
+        </ul>
+      </div>
+    </section>
+
+    <div class="upcoming">
+      <section class="block" id="plan" aria-labelledby="plan-title">
+        <div class="wrap block-inner">
+          <h2 class="block-title" id="plan-title">Plan my night</h2>
+          <p>Pick a vibe, a budget and your crew. We'll line up a night that fits.</p>
+        </div>
+      </section>
+      <section class="block" id="story" aria-labelledby="story-title">
+        <div class="wrap block-inner">
+          <h2 class="block-title" id="story-title">One perfect Vegas night, 6pm to 2am</h2>
+          <p>Sunset drinks, dinner, a show, the fountains and a late bite, hour by hour.</p>
+        </div>
+      </section>
+      <section class="block" id="map" aria-labelledby="map-title">
+        <div class="wrap block-inner">
+          <h2 class="block-title" id="map-title">The Strip, mapped</h2>
+          <p>Where the resorts and monorail stops sit, and how far apart they really are.</p>
+        </div>
+      </section>
+      <section class="block" id="faq" aria-labelledby="faq-title">
+        <div class="wrap block-inner">
+          <h2 class="block-title" id="faq-title">Vegas questions, answered</h2>
+          <p>Tipping, dress codes, getting around and what's actually free. Straight answers.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <nav class="bottom-bar" aria-label="Quick links">
+    <a class="btn btn-neon" href="#plan">Plan my night</a>
+    <a class="btn btn-ghost" href="free/">Free today</a>
+  </nav>
+
+  <footer class="site-footer is-dark">
+    <div class="wrap footer-grid">
+      <p class="footer-mark">Travelo<em>Vegas</em></p>
+      <div class="footer-links">
+        <nav aria-labelledby="f-explore">
+          <p class="eyebrow" id="f-explore">Explore</p>
+          <ul role="list">
+            <li><a href="shows/">Shows</a></li>
+            <li><a href="free/">Free</a></li>
+            <li><a href="eat/">Eat</a></li>
+            <li><a href="nightlife/">Nightlife</a></li>
+            <li><a href="pools/">Pools</a></li>
+            <li><a href="tours/">Tours</a></li>
+            <li><a href="getting-around/">Getting around</a></li>
+            <li><a href="21-plus/">21+</a></li>
+          </ul>
+        </nav>
+        <nav aria-labelledby="f-plan">
+          <p class="eyebrow" id="f-plan">Plan</p>
+          <ul role="list">
+            <li><a href="#plan">Plan my night</a></li>
+            <li><a href="#story">One perfect night</a></li>
+            <li><a href="#map">Strip map</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-legal">
+        <p id="disclosure"><strong>Affiliate disclosure.</strong> When you book shows, tours or tickets through some links on this site (like VEGAS.com, Viator and GetYourGuide), we may earn a commission at no extra cost to you.</p>
+        <p><strong>21+.</strong> Our 21+ section is for adults 21 and over. It's informational only, with no booking links.</p>
+        <p>Prices and schedules change. Always confirm with the venue.</p>
+        <p>&copy; {{year}} TraveloVegas</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
