@@ -52,6 +52,20 @@
       "list": "Clubs, open and closed"
     },
     {
+      "slug": "bars",
+      "band": "bars",
+      "crumb": "Bars",
+      "categories": [
+        "bars"
+      ],
+      "h1": "Las Vegas bars and lounges",
+      "title": "Las Vegas Bars, Rooftops and Lounges | TraveloVegas",
+      "description": "{n} Las Vegas bars, rooftop lounges and cocktail spots we've confirmed, on and off the Strip, each with the date we last checked.",
+      "answer": "These are the {n} bars and lounges we've confirmed, on and off the Strip, each with the date we last checked.",
+      "list": "Bars, rooftops and lounges",
+      "empty": "We're still checking bars and lounges. Each one shows up here as soon as it's confirmed."
+    },
+    {
       "slug": "pools",
       "band": "pools",
       "crumb": "Pools",
@@ -77,6 +91,32 @@
       "description": "{n} Las Vegas tours and attractions we've confirmed, from Grand Canyon trips to rides on the Strip.",
       "answer": "These are the {n} tours and attractions we've confirmed, from Grand Canyon day trips to rides high above the Strip.",
       "list": "Tours, trips and rides"
+    },
+    {
+      "slug": "kids",
+      "band": "kids",
+      "crumb": "Kids",
+      "categories": [],
+      "h1": "Las Vegas with kids",
+      "title": "Las Vegas with Kids: Family-Friendly Things to Do | TraveloVegas",
+      "description": "{n} family-friendly things to do in Las Vegas that we've confirmed, from free sights to attractions and restaurants, grouped by type.",
+      "answer": "These are the {n} family-friendly places we've confirmed, grouped by type, from free sights to attractions and places to eat.",
+      "list": "Family-friendly, by type",
+      "empty": "We're still checking family-friendly places. Each one shows up here as soon as it's confirmed."
+    },
+    {
+      "slug": "shopping",
+      "band": "shopping",
+      "crumb": "Shopping",
+      "categories": [
+        "shopping"
+      ],
+      "h1": "Shopping in Las Vegas",
+      "title": "Shopping in Las Vegas: Malls, Outlets and More | TraveloVegas",
+      "description": "{n} Las Vegas malls, outlets and shops we've confirmed, on and off the Strip, each with the date we last checked.",
+      "answer": "These are the {n} malls, outlets and shops we've confirmed, on and off the Strip, each with the date we last checked.",
+      "list": "Malls, outlets and shops",
+      "empty": "We're still checking malls and shops. Each one shows up here as soon as it's confirmed."
     },
     {
       "slug": "getting-around",

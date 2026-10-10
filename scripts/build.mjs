@@ -61,6 +61,7 @@ const nextDated = (l) => {
 const LABELS = {
   shows: "Show", free: "Free", attractions: "Attraction", tours: "Tour", restaurants: "Restaurant",
   nightclubs: "Nightclub", "pool-party": "Pool party", transportation: "Getting around", events: "Event",
+  bars: "Bar", shopping: "Shopping",
   "strip-clubs": "Strip club", "adult-shows": "Adult show", dispensaries: "Dispensary",
 };
 const CUISINE = (c) => (c === "bbq" ? "BBQ" : c.replace(/-/g, " ").replace(/^\w/, (x) => x.toUpperCase()));
@@ -147,7 +148,7 @@ const PLAN_RESTAURANTS = 24;
 const SPREAD_TAGS = ["date-night", "family", "budget", "splurge", "vegetarian"];
 const VIBES = {
   attractions: ["thrills"], tours: ["thrills"], shows: ["shows"], restaurants: ["food"],
-  nightclubs: ["nightlife"], "pool-party": ["nightlife"], free: [],
+  nightclubs: ["nightlife"], "pool-party": ["nightlife"], bars: ["nightlife"], free: [],
 };
 const has = (l, tag) => l.tags?.includes(tag);
 const priceNumber = (l) => Number(String(l.price ?? "").match(/\$(\d+(?:\.\d+)?)/)?.[1] ?? NaN);
@@ -346,6 +347,8 @@ const PAGE_FILTERS = {
   free: (l) => l.free === true && !l.adult,
   // Attractions have no page of their own, so they live with tours (plus free-category spots not confirmed free).
   tours: (l) => ["tours", "attractions"].includes(l.category) || (l.category === "free" && l.free !== true),
+  // Kids: confirmed, "family"-tagged listings from any non-21+ category.
+  kids: (l) => confirmed(l) && has(l, "family") && !l.adult,
   // Events come from event_date/event_end on any non-21+ listing, soonest first.
   events: (l) => upcomingEvent(l) && !l.adult,
 };
@@ -364,26 +367,36 @@ const filtersFor = (page, ls) => {
   return options.filter(([v]) => count(v) >= 2);
 };
 
-// /eat/: one group per cuisine (Indian, Vegetarian, then by size). Each card appears once, in its first match.
-// Groups show 6 cards; js/site.js collapses the rest behind "Show all" (without JS everything stays visible).
-const EAT_SHOWN = 6;
-const eatGroups = (page, ls, root) => {
-  const order = filtersFor(page, ls).map(([v, t]) => [v, t]);
+// Grouped pages: /eat/ by cuisine (Indian, Vegetarian, then by size), /kids/ by category (largest first).
+// Each card appears once, in its first matching group. Groups show 6 cards; js/site.js collapses the rest
+// behind "Show all" (without JS everything stays visible).
+const GROUP_SHOWN = 6;
+const PLURAL = { free: "Free", attractions: "Attractions", tours: "Tours", restaurants: "Restaurants", shows: "Shows", events: "Events", "pool-party": "Pools", transportation: "Getting around", shopping: "Shopping", bars: "Bars", nightclubs: "Nightlife" };
+const GROUPINGS = {
+  eat: { prefix: "cuisine", label: "Cuisines", order: (page, ls) => [...filtersFor(page, ls), ["other", "More places"]], key: (page, l) => filterKeys(page, l) },
+  kids: {
+    prefix: "type", label: "Kinds of places",
+    order: (page, ls) => [...Map.groupBy(ls, (l) => l.category)].sort((a, b) => b[1].length - a[1].length).map(([c]) => [c, PLURAL[c] ?? LABELS[c]]),
+    key: (page, l) => [l.category],
+  },
+};
+const groupedList = (page, ls, root) => {
+  const { prefix, label, order, key } = GROUPINGS[page.slug];
   const placed = new Set();
-  const groups = [...order, ["other", "More places"]].map(([v, t]) => {
-    const members = ls.filter((l) => !placed.has(l) && (v === "other" || filterKeys(page, l).includes(v)));
+  const groups = order(page, ls).map(([v, t]) => {
+    const members = ls.filter((l) => !placed.has(l) && (v === "other" || key(page, l).includes(v)));
     members.forEach((l) => placed.add(l));
-    return { v, t, members };
+    return { id: `${prefix}-${v}`, t, members };
   }).filter((g) => g.members.length);
-  const jump = `<nav class="jump" aria-label="Cuisines">
-          <ul role="list">${groups.map((g) => `<li><a href="#cuisine-${g.v}">${esc(g.t)}</a></li>`).join("")}</ul>
+  const jump = `<nav class="jump" aria-label="${label}">
+          <ul role="list">${groups.map((g) => `<li><a href="#${g.id}">${esc(g.t)}</a></li>`).join("")}</ul>
         </nav>`;
-  const html = groups.map((g) => `<section class="cuisine" aria-labelledby="cuisine-${g.v}">
-          <h3 class="cuisine-title" id="cuisine-${g.v}" tabindex="-1">${esc(g.t)} <span class="cuisine-count">${g.members.length}</span></h3>
-          <ul class="cat-grid" id="cuisine-list-${g.v}" role="list">
-      ${g.members.map((l, i) => card(l, { root, level: 4, attrs: i >= EAT_SHOWN ? " data-more" : "" })).join("\n      ")}
+  const html = groups.map((g) => `<section class="group" aria-labelledby="${g.id}">
+          <h3 class="group-title" id="${g.id}" tabindex="-1">${esc(g.t)} <span class="group-count">${g.members.length}</span></h3>
+          <ul class="cat-grid" id="${g.id}-list" role="list">
+      ${g.members.map((l, i) => card(l, { root, level: 4, attrs: i >= GROUP_SHOWN ? " data-more" : "" })).join("\n      ")}
           </ul>
-          ${g.members.length > EAT_SHOWN ? `<button class="btn btn-ghost show-all" type="button" aria-expanded="false" aria-controls="cuisine-list-${g.v}" hidden>Show all ${g.members.length}</button>` : ""}
+          ${g.members.length > GROUP_SHOWN ? `<button class="btn btn-ghost show-all" type="button" aria-expanded="false" aria-controls="${g.id}-list" hidden>Show all ${g.members.length}</button>` : ""}
         </section>`).join("\n        ");
   return { jump, html };
 };
@@ -393,7 +406,7 @@ const renderPage = (page, root) => {
   const inPage = PAGE_FILTERS[page.slug] ?? ((l) => page.categories.includes(l.category));
   // Confirmed first, then "Not yet confirmed"; data order within each (events: soonest first).
   const ls = live.filter(inPage).sort(PAGE_SORT[page.slug] ?? ((a, b) => confirmed(b) - confirmed(a)));
-  const grouped = page.slug === "eat" ? eatGroups(page, ls, root) : null;
+  const grouped = GROUPINGS[page.slug] && ls.length ? groupedList(page, ls, root) : null;
   const chips = page.slug === "21-plus" || grouped ? [] : filtersFor(page, ls);
   const n = ls.filter(confirmed).length;
   const [one, many] = page.noun ?? ["place", "places"];
