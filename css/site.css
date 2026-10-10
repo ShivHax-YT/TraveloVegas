@@ -326,6 +326,7 @@ em { font-style: italic; font-weight: 300; }
 .card-ages { color: var(--muted); font-size: var(--small); }
 .card-checked { margin-top: auto; padding-top: 12px; color: var(--muted); font-size: var(--eyebrow); letter-spacing: .02em; }
 .card-book { align-self: start; margin-top: 14px; }
+.card-check { margin-top: 12px; font-size: var(--small); font-weight: 600; }
 .disclosure { margin-top: 16px; color: var(--muted); font-size: var(--small); }
 
 /* ---------- 10. Status pills ---------- */
@@ -441,6 +442,7 @@ em { font-style: italic; font-weight: 300; }
   inset: 0;
   background: var(--scrim);
 }
+.cat-hero.is-short { min-height: clamp(300px, 40vh, 400px); }
 .cat-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cat-hero-copy {
   position: relative;
@@ -473,6 +475,13 @@ em { font-style: italic; font-weight: 300; }
   margin-top: 20px;
 }
 .cat-grid .card { border: 1px solid var(--line); }
+
+/* Trust pages (About, Privacy, Disclosure) */
+.prose { display: grid; gap: 16px; max-width: var(--measure); }
+.prose h2 { margin-top: 24px; font-size: var(--h-2); }
+.prose ul { display: grid; gap: 8px; padding-left: 1.2em; list-style: disc; }
+.prose a { text-underline-offset: .25em; }
+.content-date { color: var(--muted); font-size: var(--small); }
 
 /* 21+ page: cannabis rules + age gate */
 .rules { margin-bottom: 40px; padding: clamp(22px, 3vw, 36px); border-radius: var(--r-card); background: var(--sand); }
@@ -652,7 +661,7 @@ em { font-style: italic; font-weight: 300; }
 .footer-mark { font: 300 var(--h-hero)/var(--lh-display) var(--serif); letter-spacing: var(--track-display); }
 .footer-links {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 32px;
   @media (min-width: 900px) { align-self: end; }
 }

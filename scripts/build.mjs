@@ -74,9 +74,11 @@ const pill = (l) => {
   return "";
 };
 
+// Notes starting with "unconfirmed": no booking button; the card points to the official site instead.
+const checkFirst = (l) => /^unconfirmed/i.test(l.notes ?? "");
 // booking_url + the affiliate query for its host from config/affiliates.json (empty until accounts exist). Never on 21+.
 const bookingUrl = (l) => {
-  if (l.adult || !l.booking_url) return null;
+  if (l.adult || !l.booking_url || checkFirst(l)) return null;
   const url = new URL(l.booking_url);
   const host = Object.keys(affiliates).find((h) => !h.startsWith("_") && url.hostname.endsWith(h));
   if (host && affiliates[host]) for (const [k, v] of new URLSearchParams(affiliates[host])) url.searchParams.set(k, v);
@@ -114,12 +116,13 @@ const card = (l, { root = "", attrs = "", level = 3 } = {}) => {
           ${ages(l) ? `<p class="card-ages">${ages(l)}</p>` : ""}
           <p class="card-checked">Last checked <time datetime="${esc(l.last_checked)}">${shortDate(l.last_checked)}</time></p>
           ${book ? `<a class="btn btn-neon card-book" href="${esc(book)}" target="_blank" rel="sponsored noopener">${bookLabel(l)}</a>` : ""}
+          ${checkFirst(l) && !l.adult ? `<p class="card-check">Check the official site before you go</p>` : ""}
         </div>
       </li>`;
 };
 // Rule 4: a disclosure line next to any block that holds an affiliate link.
 const disclosure = (ls, root) =>
-  ls.some(bookingUrl) ? `<p class="disclosure">We may earn a commission if you book through these links, at no extra cost to you. <a href="${root}#disclosure">How we're paid</a></p>` : "";
+  ls.some(bookingUrl) ? `<p class="disclosure">We may earn a commission if you book through these links, at no extra cost to you. <a href="${root}disclosure/">How we're paid</a></p>` : "";
 
 // ---------- Home: "On this week" rail ----------
 const RAIL_MAX = 10;
@@ -487,6 +490,25 @@ for (const page of pages) {
   built.push(`${page.slug} ${count}`);
 }
 
+// Trust pages (About, Privacy, Disclosure): src/content/<slug>.html in src/templates/content.html.
+const { pages: contentPages } = readJson("src/content.json");
+for (const page of contentPages) {
+  used.clear();
+  const body = read(`src/content/${page.slug}.html`);
+  if (/\u2014/.test(body)) throw new Error(`build: em dash in src/content/${page.slug}.html`);
+  write(`${page.slug}/index.html`, render(read("src/templates/content.html"), {
+    title: page.title,
+    description: page.description,
+    canonical: `${SITE}${page.slug}/`,
+    ogTitle: page.h1,
+    structuredData: breadcrumbs(page),
+    crumb: esc(page.crumb),
+    h1: esc(page.h1),
+    intro: esc(page.intro),
+    body: render(body, {}, "../"),
+  }, "../"));
+}
+
 used.clear();
 write("404.html", render(read("src/404.html"), {
   title: "Page not found | TraveloVegas",
@@ -499,7 +521,7 @@ write("404.html", render(read("src/404.html"), {
 
 write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${["", ...pages.map((p) => `${p.slug}/`)].map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${data.last_full_check}</lastmod></url>`).join("\n")}
+${["", ...pages.map((p) => `${p.slug}/`), ...contentPages.map((p) => `${p.slug}/`)].map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${data.last_full_check}</lastmod></url>`).join("\n")}
 </urlset>
 `);
 write("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`);
@@ -509,7 +531,7 @@ cpSync("js", join(OUT, "js"), { recursive: true });
 if (existsSync("assets")) cpSync("assets", join(OUT, "assets"), { recursive: true });
 
 // ---------- Link check: every internal href must resolve to a built file and #id ----------
-const htmlFiles = ["index.html", ...pages.map((p) => `${p.slug}/index.html`)]; // 404 uses root-absolute links
+const htmlFiles = ["index.html", ...[...pages, ...contentPages].map((p) => `${p.slug}/index.html`)]; // 404 uses root-absolute links
 const idsIn = Object.fromEntries(htmlFiles.map((f) => [f, new Set([...read(join(OUT, f)).matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))]));
 const broken = [];
 for (const f of htmlFiles) {
