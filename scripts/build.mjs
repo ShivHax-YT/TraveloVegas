@@ -1,6 +1,7 @@
 // Builds dist/ from src/ + data/listings.json: home, one page per category, 404, sitemap, robots.
 // Copies css (tokens inlined), js and assets, then fails the build on any broken internal link.
 // Media slots use assets/media/<file> when it exists, otherwise a placeholder block.
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 
@@ -61,6 +62,7 @@ const nextDated = (l) => {
 const LABELS = {
   shows: "Show", free: "Free", attractions: "Attraction", tours: "Tour", restaurants: "Restaurant",
   nightclubs: "Nightclub", "pool-party": "Pool party", transportation: "Getting around", events: "Event",
+  bars: "Bar", shopping: "Shopping",
   "strip-clubs": "Strip club", "adult-shows": "Adult show", dispensaries: "Dispensary",
 };
 const CUISINE = (c) => (c === "bbq" ? "BBQ" : c.replace(/-/g, " ").replace(/^\w/, (x) => x.toUpperCase()));
@@ -73,9 +75,11 @@ const pill = (l) => {
   return "";
 };
 
+// Notes starting with "unconfirmed": no booking button; the card points to the official site instead.
+const checkFirst = (l) => /^unconfirmed/i.test(l.notes ?? "");
 // booking_url + the affiliate query for its host from config/affiliates.json (empty until accounts exist). Never on 21+.
 const bookingUrl = (l) => {
-  if (l.adult || !l.booking_url) return null;
+  if (l.adult || !l.booking_url || checkFirst(l)) return null;
   const url = new URL(l.booking_url);
   const host = Object.keys(affiliates).find((h) => !h.startsWith("_") && url.hostname.endsWith(h));
   if (host && affiliates[host]) for (const [k, v] of new URLSearchParams(affiliates[host])) url.searchParams.set(k, v);
@@ -113,12 +117,13 @@ const card = (l, { root = "", attrs = "", level = 3 } = {}) => {
           ${ages(l) ? `<p class="card-ages">${ages(l)}</p>` : ""}
           <p class="card-checked">Last checked <time datetime="${esc(l.last_checked)}">${shortDate(l.last_checked)}</time></p>
           ${book ? `<a class="btn btn-neon card-book" href="${esc(book)}" target="_blank" rel="sponsored noopener">${bookLabel(l)}</a>` : ""}
+          ${checkFirst(l) && !l.adult ? `<p class="card-check">Check the official site before you go</p>` : ""}
         </div>
       </li>`;
 };
 // Rule 4: a disclosure line next to any block that holds an affiliate link.
 const disclosure = (ls, root) =>
-  ls.some(bookingUrl) ? `<p class="disclosure">We may earn a commission if you book through these links, at no extra cost to you. <a href="${root}#disclosure">How we're paid</a></p>` : "";
+  ls.some(bookingUrl) ? `<p class="disclosure">We may earn a commission if you book through these links, at no extra cost to you. <a href="${root}disclosure/">How we're paid</a></p>` : "";
 
 // ---------- Home: "On this week" rail ----------
 const RAIL_MAX = 10;
@@ -147,7 +152,7 @@ const PLAN_RESTAURANTS = 24;
 const SPREAD_TAGS = ["date-night", "family", "budget", "splurge", "vegetarian"];
 const VIBES = {
   attractions: ["thrills"], tours: ["thrills"], shows: ["shows"], restaurants: ["food"],
-  nightclubs: ["nightlife"], "pool-party": ["nightlife"], free: [],
+  nightclubs: ["nightlife"], "pool-party": ["nightlife"], bars: ["nightlife"], free: [],
 };
 const has = (l, tag) => l.tags?.includes(tag);
 const priceNumber = (l) => Number(String(l.price ?? "").match(/\$(\d+(?:\.\d+)?)/)?.[1] ?? NaN);
@@ -285,16 +290,18 @@ const stripMap = (() => {
 
 // ---------- Media (config/media.json decides the AI caption and the footer credits) ----------
 const exists = (file) => existsSync(join(MEDIA, file));
+// Files shown on the page being built; cleared before each page so its footer credits only that page's media.
 const used = new Set();
-const info = (file) => {
+const info = (file, { shown = true } = {}) => {
   if (!mediaInfo[file]) throw new Error(`build: ${MEDIA}/${file} is not in config/media.json (ai + credit)`);
-  used.add(file);
+  if (shown) used.add(file);
   return mediaInfo[file];
 };
 const captionFor = (file) => (info(file).ai ? `<span class="illus" aria-hidden="true">Illustrative</span>` : ""); // CLAUDE.md rule 5
-const bandMedia = (file, root, cls = "tile-media") =>
+// Tiles load lazily; a category hero image is the page's largest paint, so it loads eagerly at high priority.
+const bandMedia = (file, root, cls = "tile-media", { eager = false } = {}) =>
   exists(file)
-    ? `<img class="${cls}" src="${root}${MEDIA}/${file}" alt="" loading="lazy" decoding="async">${captionFor(file)}`
+    ? `<img class="${cls}" src="${root}${MEDIA}/${file}" alt="" ${eager ? `fetchpriority="high"` : `loading="lazy"`} decoding="async">${captionFor(file)}`
     : `<span class="${cls} ph" aria-hidden="true"></span>`;
 // <base>.mp4 (+ <base>-mobile.mp4, <base>-poster.jpg) as a muted loop with a pause button (WCAG 2.2.2).
 // js/site.js keeps it paused under reduced motion. Null when <base>.mp4 isn't there.
@@ -311,15 +318,24 @@ const videoMedia = (base, root, cls) => {
       </button>`;
 };
 const heroMedia = (root) => videoMedia("hero", root, "hero-media") ?? `<div class="hero-media ph" aria-hidden="true"></div>`;
-// Category heroes: cat-<band>.mp4 when present, else band-<band>.jpg, else a placeholder.
-const catMedia = (band, root) => videoMedia(`cat-${band}`, root, "cat-media") ?? bandMedia(`band-${band}.jpg`, root, "cat-media");
-const ogImage = exists("og-image.jpg") && info("og-image.jpg")
-  ? `<meta property="og:image" content="${SITE}${MEDIA}/og-image.jpg">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta name="twitter:card" content="summary_large_image">`
-  : `<meta name="twitter:card" content="summary">`;
-// One footer line naming the credits of real (non-AI) media the site actually uses.
+// Category heroes: cat-<band>.mp4, then cat-<band>.jpg (1920x1080), then band-<band>.jpg, then a placeholder.
+// /21-plus/ keeps no people in its imagery (round 4), so it skips the cat-21plus shots (they show a bartender).
+const NO_PEOPLE = new Set(["21plus"]);
+const catFile = (band) => !NO_PEOPLE.has(band) && exists(`cat-${band}.jpg`) && `cat-${band}.jpg`;
+const catMedia = (band, root) =>
+  (!NO_PEOPLE.has(band) && videoMedia(`cat-${band}`, root, "cat-media"))
+  || (catFile(band) && bandMedia(catFile(band), root, "cat-media", { eager: true }))
+  || bandMedia(`band-${band}.jpg`, root, "cat-media", { eager: true });
+// og:image: a category's cat-<band>.jpg when it exists, else the site-wide og-image.jpg. Not counted as shown media.
+const ogTags = (file, w, h) =>
+  file && exists(file) && info(file, { shown: false })
+    ? `<meta property="og:image" content="${SITE}${MEDIA}/${file}">\n  <meta property="og:image:width" content="${w}">\n  <meta property="og:image:height" content="${h}">\n  <meta name="twitter:card" content="summary_large_image">`
+    : `<meta name="twitter:card" content="summary">`;
+const ogImage = ogTags("og-image.jpg", 1200, 630);
+// One footer line with the credit of every media file shown on this page, AI or not (og:image isn't shown).
 const credits = () => {
-  const names = [...new Set([...used].map((f) => mediaInfo[f]).filter((m) => !m.ai && m.credit).map((m) => m.credit))];
-  return names.length ? `<p class="footer-credits">${esc(names.join(". "))}.</p>` : "";
+  const names = [...new Set([...used].map((f) => mediaInfo[f].credit).filter(Boolean))];
+  return names.length ? `<p class="footer-credits">${esc(names.join(". ").replace(/\.$/, ""))}.</p>` : "";
 };
 
 // ---------- Templates ----------
@@ -329,6 +345,7 @@ const render = (tpl, vars, root) => {
   const all = { root, home: root || "./", year: String(now.getFullYear()), ogImage, credits: credits(), robots: "index, follow", ...vars };
   const fill = (s) => s.replace(/\{\{([\w:-]+)\}\}/g, (_, k) => {
     if (k.startsWith("band:")) return bandMedia(`band-${k.slice(5)}.jpg`, root);
+    if (k.startsWith("story:")) return bandMedia(`story-${k.slice(6)}.jpg`, root, "story-media");
     if (PARTIALS.includes(k)) return fill(read(`src/partials/${k}.html`));
     if (all[k] == null) throw new Error(`build: unknown token {{${k}}}`);
     return all[k];
@@ -345,6 +362,8 @@ const PAGE_FILTERS = {
   free: (l) => l.free === true && !l.adult,
   // Attractions have no page of their own, so they live with tours (plus free-category spots not confirmed free).
   tours: (l) => ["tours", "attractions"].includes(l.category) || (l.category === "free" && l.free !== true),
+  // Kids: confirmed, "family"-tagged listings from any non-21+ category.
+  kids: (l) => confirmed(l) && has(l, "family") && !l.adult,
   // Events come from event_date/event_end on any non-21+ listing, soonest first.
   events: (l) => upcomingEvent(l) && !l.adult,
 };
@@ -363,35 +382,46 @@ const filtersFor = (page, ls) => {
   return options.filter(([v]) => count(v) >= 2);
 };
 
-// /eat/: one group per cuisine (Indian, Vegetarian, then by size). Each card appears once, in its first match.
-// Groups show 6 cards; js/site.js collapses the rest behind "Show all" (without JS everything stays visible).
-const EAT_SHOWN = 6;
-const eatGroups = (page, ls, root) => {
-  const order = filtersFor(page, ls).map(([v, t]) => [v, t]);
+// Grouped pages: /eat/ by cuisine (Indian, Vegetarian, then by size), /kids/ by category (largest first).
+// Each card appears once, in its first matching group. Groups show 6 cards; js/site.js collapses the rest
+// behind "Show all" (without JS everything stays visible).
+const GROUP_SHOWN = 6;
+const PLURAL = { free: "Free", attractions: "Attractions", tours: "Tours", restaurants: "Restaurants", shows: "Shows", events: "Events", "pool-party": "Pools", transportation: "Getting around", shopping: "Shopping", bars: "Bars", nightclubs: "Nightlife" };
+const GROUPINGS = {
+  eat: { prefix: "cuisine", label: "Cuisines", order: (page, ls) => [...filtersFor(page, ls), ["other", "More places"]], key: (page, l) => filterKeys(page, l) },
+  kids: {
+    prefix: "type", label: "Kinds of places",
+    order: (page, ls) => [...Map.groupBy(ls, (l) => l.category)].sort((a, b) => b[1].length - a[1].length).map(([c]) => [c, PLURAL[c] ?? LABELS[c]]),
+    key: (page, l) => [l.category],
+  },
+};
+const groupedList = (page, ls, root) => {
+  const { prefix, label, order, key } = GROUPINGS[page.slug];
   const placed = new Set();
-  const groups = [...order, ["other", "More places"]].map(([v, t]) => {
-    const members = ls.filter((l) => !placed.has(l) && (v === "other" || filterKeys(page, l).includes(v)));
+  const groups = order(page, ls).map(([v, t]) => {
+    const members = ls.filter((l) => !placed.has(l) && (v === "other" || key(page, l).includes(v)));
     members.forEach((l) => placed.add(l));
-    return { v, t, members };
+    return { id: `${prefix}-${v}`, t, members };
   }).filter((g) => g.members.length);
-  const jump = `<nav class="jump" aria-label="Cuisines">
-          <ul role="list">${groups.map((g) => `<li><a href="#cuisine-${g.v}">${esc(g.t)}</a></li>`).join("")}</ul>
+  const jump = `<nav class="jump" aria-label="${label}">
+          <ul role="list">${groups.map((g) => `<li><a href="#${g.id}">${esc(g.t)}</a></li>`).join("")}</ul>
         </nav>`;
-  const html = groups.map((g) => `<section class="cuisine" aria-labelledby="cuisine-${g.v}">
-          <h3 class="cuisine-title" id="cuisine-${g.v}" tabindex="-1">${esc(g.t)} <span class="cuisine-count">${g.members.length}</span></h3>
-          <ul class="cat-grid" id="cuisine-list-${g.v}" role="list">
-      ${g.members.map((l, i) => card(l, { root, level: 4, attrs: i >= EAT_SHOWN ? " data-more" : "" })).join("\n      ")}
+  const html = groups.map((g) => `<section class="group" aria-labelledby="${g.id}">
+          <h3 class="group-title" id="${g.id}" tabindex="-1">${esc(g.t)} <span class="group-count">${g.members.length}</span></h3>
+          <ul class="cat-grid" id="${g.id}-list" role="list">
+      ${g.members.map((l, i) => card(l, { root, level: 4, attrs: i >= GROUP_SHOWN ? " data-more" : "" })).join("\n      ")}
           </ul>
-          ${g.members.length > EAT_SHOWN ? `<button class="btn btn-ghost show-all" type="button" aria-expanded="false" aria-controls="cuisine-list-${g.v}" hidden>Show all ${g.members.length}</button>` : ""}
+          ${g.members.length > GROUP_SHOWN ? `<button class="btn btn-ghost show-all" type="button" aria-expanded="false" aria-controls="${g.id}-list" hidden>Show all ${g.members.length}</button>` : ""}
         </section>`).join("\n        ");
   return { jump, html };
 };
 
 const renderPage = (page, root) => {
+  used.clear();
   const inPage = PAGE_FILTERS[page.slug] ?? ((l) => page.categories.includes(l.category));
   // Confirmed first, then "Not yet confirmed"; data order within each (events: soonest first).
   const ls = live.filter(inPage).sort(PAGE_SORT[page.slug] ?? ((a, b) => confirmed(b) - confirmed(a)));
-  const grouped = page.slug === "eat" ? eatGroups(page, ls, root) : null;
+  const grouped = GROUPINGS[page.slug] && ls.length ? groupedList(page, ls, root) : null;
   const chips = page.slug === "21-plus" || grouped ? [] : filtersFor(page, ls);
   const n = ls.filter(confirmed).length;
   const [one, many] = page.noun ?? ["place", "places"];
@@ -406,6 +436,7 @@ const renderPage = (page, root) => {
     crumb: esc(page.crumb),
     answer: esc(page.answer.replace("{n}", n)),
     bandMedia: catMedia(page.band, root),
+    ogImage: catFile(page.band) ? ogTags(catFile(page.band), 1920, 1080) : ogImage,
     chips: chips.length < 2 ? "" : `<div class="chips filter-chips" role="group" aria-label="Filter ${esc(page.crumb.toLowerCase())}">
           <button class="chip" type="button" aria-pressed="true" value="">All</button>
           ${chips.map(([v, t]) => `<button class="chip" type="button" aria-pressed="false" value="${esc(v)}">${esc(t)}</button>`).join("\n          ")}
@@ -437,6 +468,7 @@ const write = (path, content) => {
 
 rmSync(OUT, { recursive: true, force: true });
 
+used.clear();
 write("index.html", render(read("src/index.html"), {
   title: "Things to Do in Las Vegas, Checked Weekly | TraveloVegas",
   description: "Shows, free things on the Strip, pool parties, food, nightlife and getting around in Las Vegas. Checked by locals and updated every week.",
@@ -459,6 +491,26 @@ for (const page of pages) {
   built.push(`${page.slug} ${count}`);
 }
 
+// Trust pages (About, Privacy, Disclosure): src/content/<slug>.html in src/templates/content.html.
+const { pages: contentPages } = readJson("src/content.json");
+for (const page of contentPages) {
+  used.clear();
+  const body = read(`src/content/${page.slug}.html`);
+  if (/\u2014/.test(body)) throw new Error(`build: em dash in src/content/${page.slug}.html`);
+  write(`${page.slug}/index.html`, render(read("src/templates/content.html"), {
+    title: page.title,
+    description: page.description,
+    canonical: `${SITE}${page.slug}/`,
+    ogTitle: page.h1,
+    structuredData: breadcrumbs(page),
+    crumb: esc(page.crumb),
+    h1: esc(page.h1),
+    intro: esc(page.intro),
+    body: render(body, {}, "../"),
+  }, "../"));
+}
+
+used.clear();
 write("404.html", render(read("src/404.html"), {
   title: "Page not found | TraveloVegas",
   description: "That page isn't here. Head back to the TraveloVegas home page.",
@@ -470,23 +522,57 @@ write("404.html", render(read("src/404.html"), {
 
 write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${["", ...pages.map((p) => `${p.slug}/`)].map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${data.last_full_check}</lastmod></url>`).join("\n")}
+${["", ...pages.map((p) => `${p.slug}/`), ...contentPages.map((p) => `${p.slug}/`)].map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${data.last_full_check}</lastmod></url>`).join("\n")}
 </urlset>
 `);
 write("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`);
 
-for (const f of readdirSync("css").filter((f) => f.endsWith(".css"))) write(`css/${f}`, inlineCss(join("css", f)));
-cpSync("js", join(OUT, "js"), { recursive: true });
+// ---------- Fingerprinting, so everything _headers marks immutable changes URL when it changes ----------
+// css/js get a content hash in the file name; media keeps its name (the MEDIA lane owns it) and gets ?v=<hash>.
+const hash = (buf) => createHash("sha256").update(buf).digest("hex").slice(0, 10);
+const renames = [];
+for (const dir of ["css", "js"]) {
+  for (const f of readdirSync(dir).filter((f) => /\.(css|js)$/.test(f))) {
+    const body = dir === "css" ? inlineCss(join(dir, f)) : read(join(dir, f));
+    const named = f.replace(/\.(css|js)$/, `.${hash(body)}.$1`);
+    write(`${dir}/${named}`, body);
+    renames.push([`${dir}/${f}"`, `${dir}/${named}"`]);
+  }
+}
 if (existsSync("assets")) cpSync("assets", join(OUT, "assets"), { recursive: true });
+const mediaFiles = existsSync(MEDIA) ? readdirSync(MEDIA) : [];
+for (const f of mediaFiles) renames.push([`${MEDIA}/${f}"`, `${MEDIA}/${f}?v=${hash(readFileSync(join(MEDIA, f)))}"`]);
+const builtHtml = ["index.html", "404.html", ...[...pages, ...contentPages].map((p) => `${p.slug}/index.html`)];
+for (const f of builtHtml) {
+  let html = read(join(OUT, f));
+  for (const [from, to] of renames) html = html.replaceAll(from, to);
+  writeFileSync(join(OUT, f), html);
+}
+
+// Cloudflare Pages headers: fingerprinted assets cached for a year, plus baseline security headers.
+write("_headers", `/assets/media/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+`);
 
 // ---------- Link check: every internal href must resolve to a built file and #id ----------
-const htmlFiles = ["index.html", ...pages.map((p) => `${p.slug}/index.html`)]; // 404 uses root-absolute links
+const htmlFiles = ["index.html", ...[...pages, ...contentPages].map((p) => `${p.slug}/index.html`)]; // 404 uses root-absolute links
 const idsIn = Object.fromEntries(htmlFiles.map((f) => [f, new Set([...read(join(OUT, f)).matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))]));
 const broken = [];
 for (const f of htmlFiles) {
-  for (const [, href] of read(join(OUT, f)).matchAll(/\shref="([^"]+)"/g)) {
-    if (/^(https?:|mailto:|tel:)/.test(href)) continue;
-    const [path, hash] = href.split("#");
+  for (const [, href] of read(join(OUT, f)).matchAll(/\s(?:href|src|poster)="([^"]+)"/g)) {
+    if (/^(https?:|mailto:|tel:|data:)/.test(href)) continue;
+    const [path, hash] = href.split("?")[0].split("#");
     let target = path ? posix.normalize(posix.join(posix.dirname(f), path)) : f;
     if (path.endsWith("/") || target === ".") target = posix.join(target, "index.html");
     if (!existsSync(join(OUT, target))) broken.push(`${f}: ${href}`);

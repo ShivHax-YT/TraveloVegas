@@ -31,23 +31,31 @@
     if (locks.size) lenis?.stop(); else lenis?.start();
   };
 
-  // ----- Background videos: pause button (WCAG 2.2.2); aria-pressed="true" = paused. Paused under reduced motion. -----
+  // ----- Background videos (home + category heroes). Pause button per WCAG 2.2.2: aria-pressed="true" = paused.
+  // The visitor's own choice wins; otherwise paused under reduced motion. Always paused while scrolled out of view. -----
   const videos = [...document.querySelectorAll("[data-video-toggle]")].map((btn) => {
     const video = btn.parentElement.querySelector("[data-video]");
-    const set = (paused) => {
-      if (paused) video.pause(); else video.play().catch(() => {});
+    let choice = null; // "play" | "pause" once the visitor presses the button
+    let inView = true;
+    const sync = () => {
+      const paused = choice ? choice === "pause" : calm;
       btn.setAttribute("aria-pressed", String(paused));
+      if (paused || !inView) video.pause(); else video.play().catch(() => {});
     };
-    btn.addEventListener("click", () => set(btn.getAttribute("aria-pressed") !== "true"));
-    set(calm);
-    return set;
+    btn.addEventListener("click", () => {
+      choice = btn.getAttribute("aria-pressed") === "true" ? "play" : "pause";
+      sync();
+    });
+    new IntersectionObserver(([e]) => { inView = e.isIntersecting; sync(); }).observe(btn.parentElement);
+    sync();
+    return () => { choice = null; sync(); };
   });
 
   // Reduced motion switched on mid-visit: stop video, smooth scroll and parallax right away.
   motionQuery.addEventListener("change", (e) => {
     calm = e.matches;
     if (!calm) return;
-    videos.forEach((set) => set(true));
+    videos.forEach((reset) => reset());
     lenis?.destroy();
     lenis = null;
     if (media) { media.style.translate = ""; copy.style.translate = ""; copy.style.opacity = ""; }
@@ -243,6 +251,26 @@
     });
   });
 
+  // ----- "One perfect night" sticky story (PATTERNS #7). The step in the middle band of the viewport is active:
+  // its picture shows in the sticky frame and its details open. Focus inside a step activates it too. -----
+  const story = document.querySelector(".story");
+  if (story) {
+    const steps = [...story.querySelectorAll(".story-step")];
+    const shots = [...story.querySelectorAll(".story-shot")];
+    const activate = (n) => {
+      steps.forEach((s) => s.classList.toggle("is-active", s.dataset.step === n));
+      shots.forEach((s) => s.classList.toggle("is-active", s.dataset.shot === n));
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) activate(e.target.dataset.step); });
+    }, { rootMargin: "-45% 0px -45% 0px" });
+    steps.forEach((s) => {
+      io.observe(s);
+      s.addEventListener("focusin", () => activate(s.dataset.step));
+    });
+    story.classList.add("is-live"); // without JS every step stays open
+  }
+
   // ----- "Show all" for long /eat/ groups: collapsed here, so without JS every card stays visible -----
   document.querySelectorAll(".show-all").forEach((btn) => {
     const more = document.getElementById(btn.getAttribute("aria-controls")).querySelectorAll("[data-more]");
@@ -302,7 +330,6 @@
     try { ok = localStorage.getItem(KEY) === "yes"; } catch {}
     if (ok) reveal();
     else {
-      gate.classList.add("is-modal");
       gate.setAttribute("role", "dialog");
       gate.setAttribute("aria-modal", "true");
       lock("gate", lockable);
@@ -317,6 +344,7 @@
       gate.querySelector("[data-gate-yes]").addEventListener("click", () => {
         try { localStorage.setItem(KEY, "yes"); } catch {}
         reveal();
+        root.classList.replace("js-gate", "is-21");
         lock("gate", null);
         document.getElementById("cat-title")?.focus();
       });

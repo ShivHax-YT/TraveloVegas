@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {{head}}
+</head>
+<body>
+  {{header}}
+
+  <main id="main">
+    <section class="cat-hero is-short" aria-labelledby="page-title">
+      <span class="cat-media ph" aria-hidden="true"></span>
+      <div class="cat-hero-copy wrap">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <ol role="list">
+            <li><a href="{{home}}">Home</a></li>
+            <li aria-current="page">{{crumb}}</li>
+          </ol>
+        </nav>
+        <h1 class="cat-title" id="page-title">{{h1}}</h1>
+        <p class="cat-answer">{{intro}}</p>
+      </div>
+    </section>
+
+    <div class="cat-body">
+      <div class="wrap">
+        <article class="prose">
+        {{body}}
+        </article>
+      </div>
+    </div>
+  </main>
+
+  {{footer}}
+</body>
+</html>

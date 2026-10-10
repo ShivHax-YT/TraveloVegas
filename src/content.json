@@ -1,0 +1,26 @@
+{
+  "_about": "Trust pages rendered with src/templates/content.html; body from src/content/<slug>.html. No em dashes, nothing the site can't back up.",
+  "pages": [
+    {
+      "slug": "about", "crumb": "About",
+      "h1": "About TraveloVegas",
+      "title": "About TraveloVegas: Who We Are and How We Check | TraveloVegas",
+      "description": "TraveloVegas is a free Las Vegas visitor guide run by a family in Las Vegas. Here's how we check listings and how the site makes money.",
+      "intro": "A free Las Vegas visitor guide, run by a family in Las Vegas."
+    },
+    {
+      "slug": "privacy", "crumb": "Privacy",
+      "h1": "Privacy",
+      "title": "Privacy Policy | TraveloVegas",
+      "description": "What TraveloVegas stores and shares: cookieless analytics, a little browser storage for the 21+ gate and your picks, and partner cookies after you click out.",
+      "intro": "Short version: no accounts, no forms, no ad tracking, and cookieless analytics."
+    },
+    {
+      "slug": "disclosure", "crumb": "Affiliate disclosure",
+      "h1": "Affiliate disclosure",
+      "title": "Affiliate Disclosure | TraveloVegas",
+      "description": "How TraveloVegas makes money: some booking links to VEGAS.com, Viator and GetYourGuide are affiliate links, at no extra cost to you.",
+      "intro": "Some booking links on this site earn us a commission. Here's exactly how that works."
+    }
+  ]
+}

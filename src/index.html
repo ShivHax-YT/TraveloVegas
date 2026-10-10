@@ -24,14 +24,18 @@
       <div class="wrap">
         <h2 class="section-title" id="bands-title">What are you in the mood for?</h2>
         <ul class="band-grid" role="list">
-          <li><a class="tile" href="shows/">{{band:shows}}<span class="tile-label">Shows</span></a></li>
-          <li><a class="tile" href="free/">{{band:free}}<span class="tile-label">Free</span></a></li>
-          <li><a class="tile" href="eat/">{{band:food}}<span class="tile-label">Eat</span></a></li>
-          <li><a class="tile" href="nightlife/">{{band:nightlife}}<span class="tile-label">Nightlife</span></a></li>
-          <li><a class="tile" href="pools/">{{band:pools}}<span class="tile-label">Pools</span></a></li>
-          <li><a class="tile" href="tours/">{{band:tours}}<span class="tile-label">Tours</span></a></li>
-          <li><a class="tile" href="getting-around/">{{band:getting-around}}<span class="tile-label">Getting around</span></a></li>
-          <li><a class="tile" href="21-plus/">{{band:21plus}}<span class="tile-label">21+</span></a></li>
+          <li><a class="tile" href="{{root}}shows/">{{band:shows}}<span class="tile-label">Shows</span></a></li>
+          <li><a class="tile" href="{{root}}free/">{{band:free}}<span class="tile-label">Free</span></a></li>
+          <li><a class="tile" href="{{root}}eat/">{{band:food}}<span class="tile-label">Eat</span></a></li>
+          <li><a class="tile" href="{{root}}nightlife/">{{band:nightlife}}<span class="tile-label">Nightlife</span></a></li>
+          <li><a class="tile" href="{{root}}bars/">{{band:bars}}<span class="tile-label">Bars</span></a></li>
+          <li><a class="tile" href="{{root}}pools/">{{band:pools}}<span class="tile-label">Pools</span></a></li>
+          <li><a class="tile" href="{{root}}tours/">{{band:tours}}<span class="tile-label">Tours</span></a></li>
+          <li><a class="tile" href="{{root}}kids/">{{band:kids}}<span class="tile-label">Kids</span></a></li>
+          <li><a class="tile" href="{{root}}shopping/">{{band:shopping}}<span class="tile-label">Shopping</span></a></li>
+          <li><a class="tile" href="{{root}}events/">{{band:events}}<span class="tile-label">Events</span></a></li>
+          <li><a class="tile" href="{{root}}getting-around/">{{band:getting-around}}<span class="tile-label">Getting around</span></a></li>
+          <li><a class="tile" href="{{root}}21-plus/">{{band:21plus}}<span class="tile-label">21+</span></a></li>
         </ul>
       </div>
     </section>
@@ -122,14 +126,78 @@
       </div>
     </section>
 
-    <div class="upcoming">
-      <section class="block" id="story" aria-labelledby="story-title">
-        <div class="wrap block-inner">
-          <h2 class="block-title" id="story-title">One perfect Vegas night, 6pm to 2am</h2>
-          <p>Sunset drinks, dinner, a show, the fountains and a late bite, hour by hour.</p>
+    <section class="story" id="story" aria-labelledby="story-title">
+      <div class="wrap">
+        <h2 class="section-title" id="story-title" tabindex="-1">One perfect Vegas night, 6pm to 2am</h2>
+        <p class="lede">Six stops from sunset to late night, with where to go for each.</p>
+        <div class="story-grid">
+          <div class="story-frame" aria-hidden="true">
+          <div class="story-shot is-active" data-shot="1">{{story:1}}</div>
+          <div class="story-shot" data-shot="2">{{story:2}}</div>
+          <div class="story-shot" data-shot="3">{{story:3}}</div>
+          <div class="story-shot" data-shot="4">{{story:4}}</div>
+          <div class="story-shot" data-shot="5">{{story:5}}</div>
+          <div class="story-shot" data-shot="6">{{story:6}}</div>
+          </div>
+          <ol class="story-steps" role="list">
+          <li class="story-step is-active" data-step="1">
+            <div class="story-step-media" aria-hidden="true">{{story:1}}</div>
+            <p class="story-time">6pm</p>
+            <h3 class="story-name">Sunset drinks</h3>
+            <div class="story-detail"><div>
+              <p>Start somewhere high as the sun drops behind the mountains. A rooftop or a lounge with a view sets the tone.</p>
+              <a class="story-link" href="{{root}}bars/">Find a bar</a>
+            </div></div>
+          </li>
+          <li class="story-step" data-step="2">
+            <div class="story-step-media" aria-hidden="true">{{story:2}}</div>
+            <p class="story-time">8pm</p>
+            <h3 class="story-name">Dinner</h3>
+            <div class="story-detail"><div>
+              <p>Sit down to a proper dinner before the show. Pick by cuisine, from Indian to steak.</p>
+              <a class="story-link" href="{{root}}eat/">Pick a restaurant</a>
+            </div></div>
+          </li>
+          <li class="story-step" data-step="3">
+            <div class="story-step-media" aria-hidden="true">{{story:3}}</div>
+            <p class="story-time">9:30pm</p>
+            <h3 class="story-name">A show</h3>
+            <div class="story-detail"><div>
+              <p>Catch a show: Cirque, magic or something at Sphere.</p>
+              <a class="story-link" href="{{root}}shows/">See what's playing</a>
+            </div></div>
+          </li>
+          <li class="story-step" data-step="4">
+            <div class="story-step-media" aria-hidden="true">{{story:4}}</div>
+            <p class="story-time">11pm</p>
+            <h3 class="story-name">The fountains</h3>
+            <div class="story-detail"><div>
+              <p>Walk over to the Fountains of Bellagio. Watching is free.</p>
+              <a class="story-link" href="{{root}}free/">More free things</a>
+            </div></div>
+          </li>
+          <li class="story-step" data-step="5">
+            <div class="story-step-media" aria-hidden="true">{{story:5}}</div>
+            <p class="story-time">Midnight</p>
+            <h3 class="story-name">Out late</h3>
+            <div class="story-detail"><div>
+              <p>Hit a club, or keep it low key in a lounge.</p>
+              <a class="story-link" href="{{root}}nightlife/">See nightlife</a>
+            </div></div>
+          </li>
+          <li class="story-step" data-step="6">
+            <div class="story-step-media" aria-hidden="true">{{story:6}}</div>
+            <p class="story-time">2am</p>
+            <h3 class="story-name">Late bite</h3>
+            <div class="story-detail"><div>
+              <p>End the night with something to eat before bed.</p>
+              <a class="story-link" href="{{root}}eat/">Find food</a>
+            </div></div>
+          </li>
+          </ol>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
 
     <section class="map" id="map" aria-labelledby="map-title">
       <div class="wrap map-inner">

@@ -17,7 +17,10 @@ const browser = await chromium.launch();
 const shoot = async (file, w, h, out, { gatePassed = true, fullPage = true } = {}) => {
   const p = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: "reduce" });
   if (gatePassed) await p.addInitScript(() => { try { localStorage.setItem("tv-21", "yes"); } catch {} });
-  await p.goto(pathToFileURL(resolve(file)).href, { waitUntil: "networkidle" });
+  // "load" + fonts, not "networkidle": a streaming hero video never lets the network go idle.
+  await p.goto(pathToFileURL(resolve(file)).href, { waitUntil: "load" });
+  await p.evaluate(() => document.fonts.ready);
+  await p.waitForTimeout(400);
   await p.screenshot({ path: `screens/latest/${out}`, fullPage });
   const overflow = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
   if (overflow) console.log(`shots: HORIZONTAL OVERFLOW on ${file} at ${w}px`);
