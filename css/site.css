@@ -14,7 +14,7 @@ body {
   --scrim: linear-gradient(to top,
     color-mix(in srgb, var(--night) 90%, transparent),
     color-mix(in srgb, var(--night) 72%, transparent) 40%,
-    color-mix(in srgb, var(--night) 64%, transparent) 70%,
+    color-mix(in srgb, var(--night) 70%, transparent) 70%,
     color-mix(in srgb, var(--night) 25%, transparent) 88%,
     color-mix(in srgb, var(--night) 10%, transparent));
   margin: 0;

@@ -285,10 +285,11 @@ const stripMap = (() => {
 
 // ---------- Media (config/media.json decides the AI caption and the footer credits) ----------
 const exists = (file) => existsSync(join(MEDIA, file));
+// Files shown on the page being built; cleared before each page so its footer credits only that page's media.
 const used = new Set();
-const info = (file) => {
+const info = (file, { shown = true } = {}) => {
   if (!mediaInfo[file]) throw new Error(`build: ${MEDIA}/${file} is not in config/media.json (ai + credit)`);
-  used.add(file);
+  if (shown) used.add(file);
   return mediaInfo[file];
 };
 const captionFor = (file) => (info(file).ai ? `<span class="illus" aria-hidden="true">Illustrative</span>` : ""); // CLAUDE.md rule 5
@@ -313,13 +314,13 @@ const videoMedia = (base, root, cls) => {
 const heroMedia = (root) => videoMedia("hero", root, "hero-media") ?? `<div class="hero-media ph" aria-hidden="true"></div>`;
 // Category heroes: cat-<band>.mp4 when present, else band-<band>.jpg, else a placeholder.
 const catMedia = (band, root) => videoMedia(`cat-${band}`, root, "cat-media") ?? bandMedia(`band-${band}.jpg`, root, "cat-media");
-const ogImage = exists("og-image.jpg") && info("og-image.jpg")
+const ogImage = exists("og-image.jpg") && info("og-image.jpg", { shown: false })
   ? `<meta property="og:image" content="${SITE}${MEDIA}/og-image.jpg">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta name="twitter:card" content="summary_large_image">`
   : `<meta name="twitter:card" content="summary">`;
-// One footer line naming the credits of real (non-AI) media the site actually uses.
+// One footer line with the credit of every media file shown on this page, AI or not (og:image isn't shown).
 const credits = () => {
-  const names = [...new Set([...used].map((f) => mediaInfo[f]).filter((m) => !m.ai && m.credit).map((m) => m.credit))];
-  return names.length ? `<p class="footer-credits">${esc(names.join(". "))}.</p>` : "";
+  const names = [...new Set([...used].map((f) => mediaInfo[f].credit).filter(Boolean))];
+  return names.length ? `<p class="footer-credits">${esc(names.join(". ").replace(/\.$/, ""))}.</p>` : "";
 };
 
 // ---------- Templates ----------
@@ -388,6 +389,7 @@ const eatGroups = (page, ls, root) => {
 };
 
 const renderPage = (page, root) => {
+  used.clear();
   const inPage = PAGE_FILTERS[page.slug] ?? ((l) => page.categories.includes(l.category));
   // Confirmed first, then "Not yet confirmed"; data order within each (events: soonest first).
   const ls = live.filter(inPage).sort(PAGE_SORT[page.slug] ?? ((a, b) => confirmed(b) - confirmed(a)));
@@ -437,6 +439,7 @@ const write = (path, content) => {
 
 rmSync(OUT, { recursive: true, force: true });
 
+used.clear();
 write("index.html", render(read("src/index.html"), {
   title: "Things to Do in Las Vegas, Checked Weekly | TraveloVegas",
   description: "Shows, free things on the Strip, pool parties, food, nightlife and getting around in Las Vegas. Checked by locals and updated every week.",
@@ -459,6 +462,7 @@ for (const page of pages) {
   built.push(`${page.slug} ${count}`);
 }
 
+used.clear();
 write("404.html", render(read("src/404.html"), {
   title: "Page not found | TraveloVegas",
   description: "That page isn't here. Head back to the TraveloVegas home page.",

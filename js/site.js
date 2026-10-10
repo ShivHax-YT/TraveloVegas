@@ -31,23 +31,31 @@
     if (locks.size) lenis?.stop(); else lenis?.start();
   };
 
-  // ----- Background videos: pause button (WCAG 2.2.2); aria-pressed="true" = paused. Paused under reduced motion. -----
+  // ----- Background videos (home + category heroes). Pause button per WCAG 2.2.2: aria-pressed="true" = paused.
+  // The visitor's own choice wins; otherwise paused under reduced motion. Always paused while scrolled out of view. -----
   const videos = [...document.querySelectorAll("[data-video-toggle]")].map((btn) => {
     const video = btn.parentElement.querySelector("[data-video]");
-    const set = (paused) => {
-      if (paused) video.pause(); else video.play().catch(() => {});
+    let choice = null; // "play" | "pause" once the visitor presses the button
+    let inView = true;
+    const sync = () => {
+      const paused = choice ? choice === "pause" : calm;
       btn.setAttribute("aria-pressed", String(paused));
+      if (paused || !inView) video.pause(); else video.play().catch(() => {});
     };
-    btn.addEventListener("click", () => set(btn.getAttribute("aria-pressed") !== "true"));
-    set(calm);
-    return set;
+    btn.addEventListener("click", () => {
+      choice = btn.getAttribute("aria-pressed") === "true" ? "play" : "pause";
+      sync();
+    });
+    new IntersectionObserver(([e]) => { inView = e.isIntersecting; sync(); }).observe(btn.parentElement);
+    sync();
+    return () => { choice = null; sync(); };
   });
 
   // Reduced motion switched on mid-visit: stop video, smooth scroll and parallax right away.
   motionQuery.addEventListener("change", (e) => {
     calm = e.matches;
     if (!calm) return;
-    videos.forEach((set) => set(true));
+    videos.forEach((reset) => reset());
     lenis?.destroy();
     lenis = null;
     if (media) { media.style.translate = ""; copy.style.translate = ""; copy.style.opacity = ""; }
