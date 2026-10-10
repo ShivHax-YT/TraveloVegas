@@ -318,8 +318,11 @@
     "Taj Palace Strip location \"coming soon\": add when it opens",
     "21+ pages: adult listings have adult: true and booking: null. Never add affiliate links. Magic Mike Live and Thunder are 18+ shows by venue policy; the site still gates the page at 21+.",
     "Crazy Horse 3 temporarily closed since Aug 11, 2026: re-check monthly",
-    "Bellagio Conservatory holiday display: only a third-party guide (Local Adventurer, updated Oct 7, 2026) gives Nov 14, 2026 to Jan 2, 2027; no Bellagio or MGM source yet. Add as an event once Bellagio announces it (fall display runs to Nov 7).",
-    "New Year's Eve on the Strip: no official 2026-27 date or lineup page yet (Visit Las Vegas event listing \"America's Party: Las Vegas New Year 2027\" has no date text). Add as an event once LVCVA publishes it; last year's show was Dec 31 with fireworks from Strip rooftops.",
-    "Sphere: Metallica run is Oct 1, 2026 to Mar 13, 2027 per thesphere.com but has gaps; kept as a shows listing, not an event window. F1 Afterparty featuring Backstreet Boys is listed for Nov 21, 2026 on thesphere.com; add if wanted."
+    "Bellagio Conservatory holiday display (re-checked Oct 9, 2026): still no Bellagio, MGM or Visit Las Vegas page with dates. Only third-party guides say Nov 14, 2026 to Jan 2, 2027 (dark Nov 8 to 13 and Jan 3 to 8); the fall display runs to Nov 7. Add as an event once an official page states dates.",
+    "New Year's Eve on the Strip (re-checked Oct 9, 2026): no official 2026-27 date, theme or launch list yet; Visit Las Vegas has an \"America's Party: Las Vegas New Year 2027\" listing with no date text and no LVCVA release exists. Add as an event once press.lvcva.com or visitlasvegas.com states the date.",
+    "Sphere: Metallica run is Oct 1, 2026 to Mar 13, 2027 per thesphere.com but has gaps; kept as a shows listing, not an event window. F1 Afterparty featuring Backstreet Boys is listed for Nov 21, 2026 on thesphere.com; add if wanted.",
+    "Pool parties (checked Oct 9, 2026): none of the 8 dayclubs has an official 2026 closing date or 2027 reopening date posted; third-party guides conflict. Re-check weekly through November. Set reopens only from an official 2027 date; Marquee Dayclub's heated Dome keeps running into the cold months.",
+    "Skyfall Lounge at W Las Vegas (formerly Delano): closed July 20, 2026 for a remodel with a planned Oct 4, 2026 reopening. No source confirms it reopened as of Oct 9; kept temp_closed. Re-check, then flip to open and clear the alert.",
+    "Bars: Mama Rabbit (Park MGM) closed Sept 14, 2026. Hours for most bars are null because official pages were not readable (MGM-owned sites block automated fetches); fill from the official page when someone can open them."
   ]
 }
