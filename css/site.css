@@ -9,6 +9,14 @@ html { background: var(--night); -webkit-text-size-adjust: 100%; }
 html.is-locked { overflow: hidden; }
 body {
   --focus: var(--ink);
+  /* Hero scrim (home + category): at least 48% night wherever the headline can sit, so --paper text
+     stays 3:1+ even over pure white footage (checked at 390/768/1440). */
+  --scrim: linear-gradient(to top,
+    color-mix(in srgb, var(--night) 90%, transparent),
+    color-mix(in srgb, var(--night) 72%, transparent) 40%,
+    color-mix(in srgb, var(--night) 64%, transparent) 70%,
+    color-mix(in srgb, var(--night) 25%, transparent) 88%,
+    color-mix(in srgb, var(--night) 10%, transparent));
   margin: 0;
   background: var(--paper);
   color: var(--ink);
@@ -16,7 +24,7 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
 }
-h1, h2, h3 {
+h1, h2, h3, h4 {
   margin: 0;
   font-family: var(--serif);
   font-weight: 300;
@@ -182,6 +190,7 @@ em { font-style: italic; font-weight: 300; }
 /* ---------- 2. Cinematic hero ---------- */
 .hero {
   --focus: var(--gold);
+  --toggle-bottom: calc(36px + 16px); /* clear the slide-over section's overlap */
   position: relative;
   display: grid;
   align-items: end;
@@ -194,7 +203,7 @@ em { font-style: italic; font-weight: 300; }
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, color-mix(in srgb, var(--night) 85%, transparent), transparent 55%);
+  background: var(--scrim);
 }
 .hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: settle 2.4s var(--ease) both; }
 .hero-copy {
@@ -357,8 +366,29 @@ em { font-style: italic; font-weight: 300; }
   font: 500 var(--eyebrow)/1 var(--sans);
   letter-spacing: .04em;
 }
-.hero > .illus { top: auto; right: var(--gutter); bottom: calc(36px + 16px); }
-.cat-hero > .illus { top: auto; right: var(--gutter); bottom: 16px; }
+.hero > .illus { top: auto; right: calc(var(--gutter) + 52px); bottom: calc(36px + 22px); }
+.cat-hero > .illus { top: auto; right: calc(var(--gutter) + 52px); bottom: 22px; }
+
+/* Pause/play for background video (WCAG 2.2.2). aria-pressed="true" means paused. */
+.video-toggle {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--toggle-bottom, 16px);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--night) 60%, transparent);
+  color: var(--paper);
+  cursor: pointer;
+}
+.video-toggle svg { fill: currentColor; }
+.video-toggle .icon-play,
+.video-toggle[aria-pressed="true"] .icon-pause { display: none; }
+.video-toggle[aria-pressed="true"] .icon-play { display: block; }
 
 /* ---------- 8. "Plan my night" picker: idle -> selecting -> results -> (edit) ---------- */
 /* Short bottom padding until results show, so no empty band sits under the picker. */
@@ -420,7 +450,7 @@ em { font-style: italic; font-weight: 300; }
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, color-mix(in srgb, var(--night) 85%, transparent), transparent 55%);
+  background: var(--scrim);
 }
 .cat-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cat-hero-copy {
@@ -441,8 +471,8 @@ em { font-style: italic; font-weight: 300; }
 .cat-empty { max-width: var(--measure); margin-top: 20px; }
 .jump ul { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 8px; font-size: var(--small); }
 .jump a { text-underline-offset: .25em; }
-.cuisine { margin-top: 48px; scroll-margin-top: calc(var(--header-h) + 16px); }
-.cuisine-title { font-size: var(--h-3); font-weight: 400; }
+.cuisine { margin-top: 48px; }
+.cuisine-title { font-size: var(--h-3); font-weight: 400; scroll-margin-top: calc(var(--header-h) + 16px); }
 .cuisine-count { color: var(--muted); font: 500 var(--small)/1 var(--sans); }
 .show-all { margin-top: 18px; }
 .filter-chips { margin-bottom: 20px; }
@@ -477,7 +507,11 @@ em { font-style: italic; font-weight: 300; }
 .gate-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
 
 /* ---------- 9. Strip map ---------- */
-.map { padding-block: var(--section); scroll-margin-top: var(--header-h); }
+.map {
+  --rail: color-mix(in srgb, var(--sky) 60%, var(--ink)); /* 3.59:1 on paper; plain --sky is 1.52:1 */
+  padding-block: var(--section);
+  scroll-margin-top: var(--header-h);
+}
 .map-inner {
   display: grid;
   gap: 40px;
@@ -493,18 +527,18 @@ em { font-style: italic; font-weight: 300; }
 .map-legend li { display: inline-flex; align-items: center; gap: 8px; }
 .key { display: inline-block; }
 .key-pin { width: 12px; height: 12px; border-radius: var(--r-pill); background: var(--neon); }
-.key-rail { width: 22px; border-top: 2px dashed var(--sky); }
+.key-rail { width: 22px; border-top: 2px dashed var(--rail); }
 .map-hint { color: var(--muted); font-size: var(--small); }
 .map-cards { display: grid; gap: 12px; }
-.map-cards .card { border: 1px solid var(--line); }
+.map-cards .card { border: 1px solid var(--line); scroll-margin-top: calc(var(--header-h) + 16px); }
 .map-frame { justify-self: center; width: 100%; max-width: 520px; }
 .strip-svg { display: block; width: 100%; height: auto; overflow: visible; font: 500 14px var(--sans); }
 .strip-line { stroke: var(--ink); stroke-width: 3; fill: none; }
 .strip-arrow { stroke: var(--ink); stroke-width: 2; fill: none; }
 .strip-north { fill: var(--muted); font-size: 13px; }
-.rail-line { stroke: var(--sky); stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; }
+.rail-line { stroke: var(--rail); stroke-width: 2.5; stroke-dasharray: 6 5; fill: none; }
 .rail-title { fill: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
-.station circle { fill: var(--paper); stroke: var(--sky); stroke-width: 2.5; }
+.station circle { fill: var(--paper); stroke: var(--rail); stroke-width: 2.5; }
 .station text { fill: var(--muted); font-size: 12px; }
 .spot circle { fill: var(--ink); }
 .spot text { fill: var(--ink); }
@@ -617,3 +651,4 @@ em { font-style: italic; font-weight: 300; }
   @media (min-width: 900px) { grid-column: 1 / -1; max-width: none; }
 }
 .footer-legal strong { color: var(--paper); font-weight: 600; }
+.footer-credits { font-size: var(--eyebrow); letter-spacing: .02em; }

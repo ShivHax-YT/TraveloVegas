@@ -1,0 +1,7 @@
+{
+  "_about": "Every file in assets/media, keyed by file name. ai: true shows the small \"Illustrative\" caption (CLAUDE.md rule 5); ai: false shows none. credit goes in the footer credits line. The build fails if a file it uses is missing here.",
+  "hero.mp4": { "ai": false, "credit": "Video: Pexels" },
+  "hero-mobile.mp4": { "ai": false, "credit": "Video: Pexels" },
+  "hero-poster.jpg": { "ai": false, "credit": "Video: Pexels" },
+  "og-image.jpg": { "ai": false, "credit": "Video: Pexels" }
+}
