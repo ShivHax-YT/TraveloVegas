@@ -294,9 +294,10 @@ const info = (file, { shown = true } = {}) => {
   return mediaInfo[file];
 };
 const captionFor = (file) => (info(file).ai ? `<span class="illus" aria-hidden="true">Illustrative</span>` : ""); // CLAUDE.md rule 5
-const bandMedia = (file, root, cls = "tile-media") =>
+// Tiles load lazily; a category hero image is the page's largest paint, so it loads eagerly at high priority.
+const bandMedia = (file, root, cls = "tile-media", { eager = false } = {}) =>
   exists(file)
-    ? `<img class="${cls}" src="${root}${MEDIA}/${file}" alt="" loading="lazy" decoding="async">${captionFor(file)}`
+    ? `<img class="${cls}" src="${root}${MEDIA}/${file}" alt="" ${eager ? `fetchpriority="high"` : `loading="lazy"`} decoding="async">${captionFor(file)}`
     : `<span class="${cls} ph" aria-hidden="true"></span>`;
 // <base>.mp4 (+ <base>-mobile.mp4, <base>-poster.jpg) as a muted loop with a pause button (WCAG 2.2.2).
 // js/site.js keeps it paused under reduced motion. Null when <base>.mp4 isn't there.
@@ -313,11 +314,20 @@ const videoMedia = (base, root, cls) => {
       </button>`;
 };
 const heroMedia = (root) => videoMedia("hero", root, "hero-media") ?? `<div class="hero-media ph" aria-hidden="true"></div>`;
-// Category heroes: cat-<band>.mp4 when present, else band-<band>.jpg, else a placeholder.
-const catMedia = (band, root) => videoMedia(`cat-${band}`, root, "cat-media") ?? bandMedia(`band-${band}.jpg`, root, "cat-media");
-const ogImage = exists("og-image.jpg") && info("og-image.jpg", { shown: false })
-  ? `<meta property="og:image" content="${SITE}${MEDIA}/og-image.jpg">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta name="twitter:card" content="summary_large_image">`
-  : `<meta name="twitter:card" content="summary">`;
+// Category heroes: cat-<band>.mp4, then cat-<band>.jpg (1920x1080), then band-<band>.jpg, then a placeholder.
+// /21-plus/ keeps no people in its imagery (round 4), so it skips the cat-21plus shots (they show a bartender).
+const NO_PEOPLE = new Set(["21plus"]);
+const catFile = (band) => !NO_PEOPLE.has(band) && exists(`cat-${band}.jpg`) && `cat-${band}.jpg`;
+const catMedia = (band, root) =>
+  (!NO_PEOPLE.has(band) && videoMedia(`cat-${band}`, root, "cat-media"))
+  || (catFile(band) && bandMedia(catFile(band), root, "cat-media", { eager: true }))
+  || bandMedia(`band-${band}.jpg`, root, "cat-media", { eager: true });
+// og:image: a category's cat-<band>.jpg when it exists, else the site-wide og-image.jpg. Not counted as shown media.
+const ogTags = (file, w, h) =>
+  file && exists(file) && info(file, { shown: false })
+    ? `<meta property="og:image" content="${SITE}${MEDIA}/${file}">\n  <meta property="og:image:width" content="${w}">\n  <meta property="og:image:height" content="${h}">\n  <meta name="twitter:card" content="summary_large_image">`
+    : `<meta name="twitter:card" content="summary">`;
+const ogImage = ogTags("og-image.jpg", 1200, 630);
 // One footer line with the credit of every media file shown on this page, AI or not (og:image isn't shown).
 const credits = () => {
   const names = [...new Set([...used].map((f) => mediaInfo[f].credit).filter(Boolean))];
@@ -421,6 +431,7 @@ const renderPage = (page, root) => {
     crumb: esc(page.crumb),
     answer: esc(page.answer.replace("{n}", n)),
     bandMedia: catMedia(page.band, root),
+    ogImage: catFile(page.band) ? ogTags(catFile(page.band), 1920, 1080) : ogImage,
     chips: chips.length < 2 ? "" : `<div class="chips filter-chips" role="group" aria-label="Filter ${esc(page.crumb.toLowerCase())}">
           <button class="chip" type="button" aria-pressed="true" value="">All</button>
           ${chips.map(([v, t]) => `<button class="chip" type="button" aria-pressed="false" value="${esc(v)}">${esc(t)}</button>`).join("\n          ")}
