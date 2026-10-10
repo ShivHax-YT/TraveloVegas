@@ -330,7 +330,6 @@
     try { ok = localStorage.getItem(KEY) === "yes"; } catch {}
     if (ok) reveal();
     else {
-      gate.classList.add("is-modal");
       gate.setAttribute("role", "dialog");
       gate.setAttribute("aria-modal", "true");
       lock("gate", lockable);
@@ -345,6 +344,7 @@
       gate.querySelector("[data-gate-yes]").addEventListener("click", () => {
         try { localStorage.setItem(KEY, "yes"); } catch {}
         reveal();
+        root.classList.replace("js-gate", "is-21");
         lock("gate", null);
         document.getElementById("cat-title")?.focus();
       });

@@ -1,4 +1,6 @@
-<section class="gate" data-gate aria-labelledby="gate-title" aria-describedby="gate-text">
+<!-- Before first paint: JS visitors get the modal gate (or, if already confirmed, the listings) with no layout shift. -->
+  <script>(function(){var r=document.documentElement,ok=false;try{ok=localStorage.getItem("tv-21")==="yes"}catch(e){}r.classList.add(ok?"is-21":"js-gate","is-locked");if(ok)r.classList.remove("is-locked")})();</script>
+  <section class="gate" data-gate aria-labelledby="gate-title" aria-describedby="gate-text">
     <div class="gate-box">
       <p class="eyebrow">21+ only</p>
       <h2 class="gate-title" id="gate-title">Are you 21 or older?</h2>

@@ -9,6 +9,7 @@ html { background: var(--night); -webkit-text-size-adjust: 100%; }
 html.is-locked { overflow: hidden; }
 body {
   --focus: var(--ink);
+  --soft: var(--muted); /* secondary text; sand sections darken it (--muted on --sand is 4.45:1) */
   /* Hero scrim (home + category): at least 48% night wherever the headline can sit, so --paper text
      stays 3:1+ even over pure white footage (checked at 390/768/1440). */
   --scrim: linear-gradient(to top,
@@ -60,7 +61,7 @@ em { font-style: italic; font-weight: 300; }
   text-transform: uppercase;
 }
 .section-title { font-size: var(--h-1); }
-.lede { margin-top: 14px; max-width: var(--measure); color: var(--muted); }
+.lede { margin-top: 14px; max-width: var(--measure); color: var(--soft); }
 
 /* ---------- Buttons ---------- */
 .btn {
@@ -275,7 +276,7 @@ em { font-style: italic; font-weight: 300; }
 .tile:focus-visible .tile-label { transform: translateY(-4px); }
 
 /* ---------- 6. "On this week" rail ---------- */
-.week { padding-block: var(--section); background: var(--sand); }
+.week { --soft: color-mix(in srgb, var(--muted) 70%, var(--ink)); padding-block: var(--section); background: var(--sand); }
 .section-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .rail-nav { display: none; gap: 10px; @media (min-width: 900px) { display: flex; } }
 .rail-btn {
@@ -327,7 +328,7 @@ em { font-style: italic; font-weight: 300; }
 .card-checked { margin-top: auto; padding-top: 12px; color: var(--muted); font-size: var(--eyebrow); letter-spacing: .02em; }
 .card-book { align-self: start; margin-top: 14px; }
 .card-check { margin-top: 12px; font-size: var(--small); font-weight: 600; }
-.disclosure { margin-top: 16px; color: var(--muted); font-size: var(--small); }
+.disclosure { margin-top: 16px; color: var(--soft); font-size: var(--small); }
 
 /* ---------- 10. Status pills ---------- */
 .pill {
@@ -488,7 +489,8 @@ em { font-style: italic; font-weight: 300; }
 .rules-title { margin-bottom: 14px; font-size: var(--h-2); }
 .rules ul { display: grid; gap: 8px; max-width: var(--measure); padding-left: 1.2em; list-style: disc; }
 .rules-source { margin-top: 14px; font-size: var(--small); }
-/* In the page flow by default (no-JS visitors get the gate + rules); .is-modal is the JS overlay. */
+/* In the page flow by default (no-JS visitors get the gate + rules). The inline script in gate.html sets
+   html.js-gate (modal overlay) or html.is-21 (already confirmed) before first paint. */
 .gate {
   --focus: var(--gold);
   display: grid;
@@ -497,7 +499,9 @@ em { font-style: italic; font-weight: 300; }
   background: var(--night);
   color: var(--paper);
 }
-.gate.is-modal { position: fixed; inset: 0; z-index: 60; padding: var(--gutter); }
+.js-gate .gate { position: fixed; inset: 0; z-index: 60; padding: var(--gutter); }
+.is-21 .gate { display: none; }
+.is-21 [data-gated] { display: block !important; }
 .gate-noscript { color: var(--gold); }
 .gate-box { display: grid; gap: 16px; max-width: 520px; }
 .gate .eyebrow { color: var(--gold); }

@@ -1,6 +1,7 @@
 // Builds dist/ from src/ + data/listings.json: home, one page per category, 404, sitemap, robots.
 // Copies css (tokens inlined), js and assets, then fails the build on any broken internal link.
 // Media slots use assets/media/<file> when it exists, otherwise a placeholder block.
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 
@@ -526,18 +527,52 @@ ${["", ...pages.map((p) => `${p.slug}/`), ...contentPages.map((p) => `${p.slug}/
 `);
 write("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`);
 
-for (const f of readdirSync("css").filter((f) => f.endsWith(".css"))) write(`css/${f}`, inlineCss(join("css", f)));
-cpSync("js", join(OUT, "js"), { recursive: true });
+// ---------- Fingerprinting, so everything _headers marks immutable changes URL when it changes ----------
+// css/js get a content hash in the file name; media keeps its name (the MEDIA lane owns it) and gets ?v=<hash>.
+const hash = (buf) => createHash("sha256").update(buf).digest("hex").slice(0, 10);
+const renames = [];
+for (const dir of ["css", "js"]) {
+  for (const f of readdirSync(dir).filter((f) => /\.(css|js)$/.test(f))) {
+    const body = dir === "css" ? inlineCss(join(dir, f)) : read(join(dir, f));
+    const named = f.replace(/\.(css|js)$/, `.${hash(body)}.$1`);
+    write(`${dir}/${named}`, body);
+    renames.push([`${dir}/${f}"`, `${dir}/${named}"`]);
+  }
+}
 if (existsSync("assets")) cpSync("assets", join(OUT, "assets"), { recursive: true });
+const mediaFiles = existsSync(MEDIA) ? readdirSync(MEDIA) : [];
+for (const f of mediaFiles) renames.push([`${MEDIA}/${f}"`, `${MEDIA}/${f}?v=${hash(readFileSync(join(MEDIA, f)))}"`]);
+const builtHtml = ["index.html", "404.html", ...[...pages, ...contentPages].map((p) => `${p.slug}/index.html`)];
+for (const f of builtHtml) {
+  let html = read(join(OUT, f));
+  for (const [from, to] of renames) html = html.replaceAll(from, to);
+  writeFileSync(join(OUT, f), html);
+}
+
+// Cloudflare Pages headers: fingerprinted assets cached for a year, plus baseline security headers.
+write("_headers", `/assets/media/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+`);
 
 // ---------- Link check: every internal href must resolve to a built file and #id ----------
 const htmlFiles = ["index.html", ...[...pages, ...contentPages].map((p) => `${p.slug}/index.html`)]; // 404 uses root-absolute links
 const idsIn = Object.fromEntries(htmlFiles.map((f) => [f, new Set([...read(join(OUT, f)).matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))]));
 const broken = [];
 for (const f of htmlFiles) {
-  for (const [, href] of read(join(OUT, f)).matchAll(/\shref="([^"]+)"/g)) {
-    if (/^(https?:|mailto:|tel:)/.test(href)) continue;
-    const [path, hash] = href.split("#");
+  for (const [, href] of read(join(OUT, f)).matchAll(/\s(?:href|src|poster)="([^"]+)"/g)) {
+    if (/^(https?:|mailto:|tel:|data:)/.test(href)) continue;
+    const [path, hash] = href.split("?")[0].split("#");
     let target = path ? posix.normalize(posix.join(posix.dirname(f), path)) : f;
     if (path.endsWith("/") || target === ".") target = posix.join(target, "index.html");
     if (!existsSync(join(OUT, target))) broken.push(`${f}: ${href}`);
