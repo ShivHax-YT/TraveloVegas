@@ -6,7 +6,9 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, posix } from "node:path";
 
 const OUT = "dist";
-const SITE = "https://travelovegas.com/";
+// SITE_URL sets canonical/og/sitemap URLs; NOINDEX=1 builds a preview that search engines are told to skip.
+const SITE = (process.env.SITE_URL || "https://travelovegas.com/").replace(/\/?$/, "/");
+const NOINDEX = process.env.NOINDEX === "1";
 const MEDIA = "assets/media";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const read = (f) => readFileSync(f, "utf8");
@@ -319,11 +321,9 @@ const videoMedia = (base, root, cls) => {
 };
 const heroMedia = (root) => videoMedia("hero", root, "hero-media") ?? `<div class="hero-media ph" aria-hidden="true"></div>`;
 // Category heroes: cat-<band>.mp4, then cat-<band>.jpg (1920x1080), then band-<band>.jpg, then a placeholder.
-// /21-plus/ keeps no people in its imagery (round 4), so it skips the cat-21plus shots (they show a bartender).
-const NO_PEOPLE = new Set(["21plus"]);
-const catFile = (band) => !NO_PEOPLE.has(band) && exists(`cat-${band}.jpg`) && `cat-${band}.jpg`;
+const catFile = (band) => exists(`cat-${band}.jpg`) && `cat-${band}.jpg`;
 const catMedia = (band, root) =>
-  (!NO_PEOPLE.has(band) && videoMedia(`cat-${band}`, root, "cat-media"))
+  videoMedia(`cat-${band}`, root, "cat-media")
   || (catFile(band) && bandMedia(catFile(band), root, "cat-media", { eager: true }))
   || bandMedia(`band-${band}.jpg`, root, "cat-media", { eager: true });
 // og:image: a category's cat-<band>.jpg when it exists, else the site-wide og-image.jpg. Not counted as shown media.
@@ -332,17 +332,26 @@ const ogTags = (file, w, h) =>
     ? `<meta property="og:image" content="${SITE}${MEDIA}/${file}">\n  <meta property="og:image:width" content="${w}">\n  <meta property="og:image:height" content="${h}">\n  <meta name="twitter:card" content="summary_large_image">`
     : `<meta name="twitter:card" content="summary">`;
 const ogImage = ogTags("og-image.jpg", 1200, 630);
-// One footer line with the credit of every media file shown on this page, AI or not (og:image isn't shown).
+// One deduped footer line for the media shown on this page (og:image isn't shown). AI stills collapse into one
+// sentence about the Illustrative caption; a credit already covered by a fuller one ("Video: DroneStock" inside
+// "Video: Pexels and DroneStock, ...") is dropped.
 const credits = () => {
-  const names = [...new Set([...used].map((f) => mediaInfo[f].credit).filter(Boolean))];
-  return names.length ? `<p class="footer-credits">${esc(names.join(". ").replace(/\.$/, ""))}.</p>` : "";
+  const files = [...used].map((f) => [f, mediaInfo[f]]);
+  const isAiStill = ([f, m]) => m.ai && /\.(jpe?g|png|webp|avif)$/i.test(f);
+  let names = [...new Set(files.filter((x) => !isAiStill(x)).map(([, m]) => m.credit).filter(Boolean))];
+  const sources = (c) => c.replace(/^[^:]*:\s*/, "").split(/,|\s+and\s+/)[0].trim().split(/\s+and\s+/);
+  names = names.filter((n) => !names.some((o) => o !== n && o.length > n.length && sources(n).every((s) => o.includes(s))));
+  const parts = [...names.map((n) => n.replace(/\.$/, "")), ...(files.some(isAiStill) ? ["Images marked Illustrative are AI-generated"] : [])];
+  return parts.length ? `<p class="footer-credits">${esc(parts.join(". "))}.</p>` : "";
 };
 
 // ---------- Templates ----------
 const PARTIALS = ["head", "header", "footer"];
 // {{key}} from vars; {{band:x}} is a home tile image. Partials see the same vars. Unknown keys fail the build.
 const render = (tpl, vars, root) => {
-  const all = { root, home: root || "./", year: String(now.getFullYear()), ogImage, credits: credits(), robots: "index, follow", ...vars };
+  // {{credits}} is filled last, once every media token on the page has registered what it shows.
+  const all = { root, home: root || "./", year: String(now.getFullYear()), ogImage, credits: "\u0000credits\u0000", robots: "index, follow", ...vars };
+  if (NOINDEX) all.robots = "noindex";
   const fill = (s) => s.replace(/\{\{([\w:-]+)\}\}/g, (_, k) => {
     if (k.startsWith("band:")) return bandMedia(`band-${k.slice(5)}.jpg`, root);
     if (k.startsWith("story:")) return bandMedia(`story-${k.slice(6)}.jpg`, root, "story-media");
@@ -350,7 +359,7 @@ const render = (tpl, vars, root) => {
     if (all[k] == null) throw new Error(`build: unknown token {{${k}}}`);
     return all[k];
   });
-  return fill(tpl);
+  return fill(tpl).replace("\u0000credits\u0000", () => credits());
 };
 
 // ---------- Category pages ----------
@@ -525,7 +534,7 @@ write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
 ${["", ...pages.map((p) => `${p.slug}/`), ...contentPages.map((p) => `${p.slug}/`)].map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${data.last_full_check}</lastmod></url>`).join("\n")}
 </urlset>
 `);
-write("robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`);
+write("robots.txt", NOINDEX ? "User-agent: *\nDisallow: /\n" : `User-agent: *\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`);
 
 // ---------- Fingerprinting, so everything _headers marks immutable changes URL when it changes ----------
 // css/js get a content hash in the file name; media keeps its name (the MEDIA lane owns it) and gets ?v=<hash>.
@@ -560,7 +569,7 @@ write("_headers", `/assets/media/*
   Cache-Control: public, max-age=31536000, immutable
 
 /*
-  X-Content-Type-Options: nosniff
+${NOINDEX ? "  X-Robots-Tag: noindex\n" : ""}  X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 `);
