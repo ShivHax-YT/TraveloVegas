@@ -216,7 +216,7 @@ em { font-style: italic; font-weight: 300; }
   padding: calc(var(--header-h) + 40px) 0 calc(36px + var(--gutter) * 1.4);
 }
 .hero-line { animation: rise var(--t-scene) var(--ease) var(--d, 0s) both; }
-.hero .eyebrow { color: var(--gold); }
+.hero .eyebrow { color: var(--paper); } /* paper, not gold: clears 4.5:1 on every frame of the montage */
 .hero-title { font-size: var(--h-hero); }
 .hero-title em { display: block; }
 .hero-lede { max-width: 46ch; color: color-mix(in srgb, var(--paper) 86%, transparent); }
@@ -250,6 +250,7 @@ em { font-style: italic; font-weight: 300; }
   aspect-ratio: 4 / 5;
   overflow: hidden;
   border-radius: var(--r-media);
+  background: var(--night); /* shows while a lazy tile image is still loading */
   color: var(--paper);
   text-decoration: none;
 }
@@ -358,7 +359,7 @@ em { font-style: italic; font-weight: 300; }
   letter-spacing: .04em;
 }
 .hero > .illus { top: auto; right: calc(var(--gutter) + 52px); bottom: calc(36px + 22px); }
-.cat-hero > .illus { top: auto; right: calc(var(--gutter) + 52px); bottom: 22px; }
+.cat-hero > .illus { top: calc(var(--header-h) + 12px); right: var(--gutter); }
 
 /* Pause/play for background video (WCAG 2.2.2). aria-pressed="true" means paused. */
 .video-toggle {

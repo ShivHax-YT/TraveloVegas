@@ -20,6 +20,16 @@ const shoot = async (file, w, h, out, { gatePassed = true, fullPage = true } = {
   // "load" + fonts, not "networkidle": a streaming hero video never lets the network go idle.
   await p.goto(pathToFileURL(resolve(file)).href, { waitUntil: "load" });
   await p.evaluate(() => document.fonts.ready);
+  // Walk down the page so lazy images load, then return to the top for the capture.
+  await p.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += innerHeight / 2) { scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); }
+    scrollTo(0, 0);
+  });
+  // Images in display:none containers (e.g. the story frame on phones) never load, so cap the wait.
+  await p.evaluate(() => Promise.race([
+    Promise.all([...document.images].filter((i) => !i.complete && i.offsetParent).map((i) => new Promise((r) => { i.onload = i.onerror = r; }))),
+    new Promise((r) => setTimeout(r, 4000)),
+  ]));
   await p.waitForTimeout(400);
   await p.screenshot({ path: `screens/latest/${out}`, fullPage });
   const overflow = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
