@@ -251,6 +251,26 @@
     });
   });
 
+  // ----- "One perfect night" sticky story (PATTERNS #7). The step in the middle band of the viewport is active:
+  // its picture shows in the sticky frame and its details open. Focus inside a step activates it too. -----
+  const story = document.querySelector(".story");
+  if (story) {
+    const steps = [...story.querySelectorAll(".story-step")];
+    const shots = [...story.querySelectorAll(".story-shot")];
+    const activate = (n) => {
+      steps.forEach((s) => s.classList.toggle("is-active", s.dataset.step === n));
+      shots.forEach((s) => s.classList.toggle("is-active", s.dataset.shot === n));
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) activate(e.target.dataset.step); });
+    }, { rootMargin: "-45% 0px -45% 0px" });
+    steps.forEach((s) => {
+      io.observe(s);
+      s.addEventListener("focusin", () => activate(s.dataset.step));
+    });
+    story.classList.add("is-live"); // without JS every step stays open
+  }
+
   // ----- "Show all" for long /eat/ groups: collapsed here, so without JS every card stays visible -----
   document.querySelectorAll(".show-all").forEach((btn) => {
     const more = document.getElementById(btn.getAttribute("aria-controls")).querySelectorAll("[data-more]");

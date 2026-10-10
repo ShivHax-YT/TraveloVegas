@@ -341,6 +341,7 @@ const render = (tpl, vars, root) => {
   const all = { root, home: root || "./", year: String(now.getFullYear()), ogImage, credits: credits(), robots: "index, follow", ...vars };
   const fill = (s) => s.replace(/\{\{([\w:-]+)\}\}/g, (_, k) => {
     if (k.startsWith("band:")) return bandMedia(`band-${k.slice(5)}.jpg`, root);
+    if (k.startsWith("story:")) return bandMedia(`story-${k.slice(6)}.jpg`, root, "story-media");
     if (PARTIALS.includes(k)) return fill(read(`src/partials/${k}.html`));
     if (all[k] == null) throw new Error(`build: unknown token {{${k}}}`);
     return all[k];

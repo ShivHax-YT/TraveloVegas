@@ -539,17 +539,48 @@ em { font-style: italic; font-weight: 300; }
 .pin.is-active .pin-halo { transform: scale(1.35); }
 .pin:focus-visible .pin-dot { stroke: var(--ink); stroke-width: 3; }
 
-/* ---------- Placeholder blocks (built in later rounds) ---------- */
-.upcoming { padding-block: calc(var(--section) * .6); }
-.block { scroll-margin-top: var(--header-h); }
-.block-inner {
-  display: grid;
-  gap: 12px;
-  padding-block: clamp(28px, 4vw, 48px);
-  border-top: 1px solid var(--line);
-  @media (min-width: 900px) { grid-template-columns: 5fr 7fr; gap: 48px; align-items: baseline; }
+/* ---------- 7. "One perfect night" sticky story ---------- */
+.story { padding-block: var(--section); scroll-margin-top: var(--header-h); }
+.story-grid {
+  margin-top: 40px;
+  @media (min-width: 900px) { display: grid; grid-template-columns: 5fr 6fr; gap: 64px; align-items: start; }
 }
-.block-title { font-size: var(--h-2); }
+/* Desktop: one sticky frame that crossfades between the six pictures. */
+.story-frame {
+  display: none;
+  @media (min-width: 900px) {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    display: block;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--r-media);
+    background: var(--night);
+  }
+}
+.story-shot { position: absolute; inset: 0; opacity: 0; transform: scale(1.06); transition: opacity .7s var(--ease), transform 1.4s var(--ease); }
+.story-shot.is-active { opacity: 1; transform: none; }
+.story-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.story-steps { display: grid; gap: 48px; @media (min-width: 900px) { gap: 0; } }
+.story-step { @media (min-width: 900px) { padding: 18vh 0 22vh; } }
+/* Mobile: no sticky frame; each step carries its own picture. */
+.story-step-media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: var(--r-media);
+  background: var(--night);
+  @media (min-width: 900px) { display: none; }
+}
+.story-time { color: var(--muted); font: 500 var(--eyebrow)/1.2 var(--sans); letter-spacing: var(--track-eyebrow); text-transform: uppercase; }
+.story-name { margin-top: 8px; font-size: var(--h-2); }
+/* Details open via grid rows (switched, not animated: rule 6); only their opacity fades. */
+.story-detail { display: grid; grid-template-rows: 1fr; }
+.story-detail > div { display: grid; gap: 12px; min-height: 0; max-width: 46ch; padding-top: 12px; overflow: hidden; transition: opacity var(--t-ui) var(--ease); }
+.story.is-live .story-step:not(.is-active) .story-detail { @media (min-width: 900px) { grid-template-rows: 0fr; } }
+.story.is-live .story-step:not(.is-active) .story-detail > div { @media (min-width: 900px) { opacity: 0; } }
+.story-link { justify-self: start; font-weight: 600; text-underline-offset: .25em; }
 
 /* ---------- 11. FAQ ---------- */
 .faq { padding-block: var(--section); background: var(--sand); scroll-margin-top: var(--header-h); }
